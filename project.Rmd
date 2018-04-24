@@ -16,4 +16,434 @@ editor_options:
 
 ```{r "load packages", include=FALSE}
 library(tidyverse)
+library(plotly)
+library(stats)
+library(FactoMineR)
 ```
+
+#Background
+
+We have three sources, aqautic, terrestrial, and aquatic mosses (a, t, m) and three variables we can measure, C:N, carbon isotopes, and nitrogen isotopes. We want to know, for a given amount of input of a, t, and m, what do we expect our C:N, 13C, and 15N to be? Now, since there are errors associated with the proxy values for each input, we're going to do a Monte Carlo simulation that will select from a distribution within those error ranges and give us a range of outputs.
+
+
+#Define parameters
+
+Define a simply mass balance equation that applies for all proxies. Define a set of sce
+
+```{r Simulate}
+#General normalization equation
+normalize <- function(x, y, z) {
+  x / (x + y + z)
+}
+
+#General mass balance equation
+calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
+  (a * proxy_a + t * proxy_t + m * proxy_m) / (a + t + m)
+}
+
+#Error for mass balance eqn
+calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m_error) {
+  a_norm = normalize(a, t, m)
+  t_norm = normalize(t, a, m)
+  m_norm = normalize(m, a, t)
+  sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (m_norm * proxy_m_error) ^ 2 )
+}
+
+# basic parameters
+parameters <- 
+  data_frame(
+    cn_a = 8.75,
+    cn_t = 48,
+    cn_m = 31,
+    d13c_a = -30.7,
+    d13c_t = -26.9,
+    d13c_m = -22,
+    d15n_a = 6.5,
+    d15n_t = -1.6,
+    d15n_m = 0.8
+  )
+
+parameter_errors <- 
+  data_frame(
+    cn_a = 0.25,
+    cn_t = 15,
+    cn_m = 4,
+    d13c_a = 0.2,
+    d13c_t = 0.6,
+    d13c_m = 1.5,
+    d15n_a = 0.2,
+    d15n_t = 1.8,
+    d15n_m = 0.5
+  )
+
+# Testing these functions:
+# calculate_proxy(0.3, parameters$cn_a, 0.3, parameters$cn_t, 0.4, parameters$cn_m)
+# calculate_proxy_error(0.3, parameter_errors$cn_a, 0.3, parameter_errors$cn_t, 0.4, parameter_errors$cn_m)
+
+
+#Table of inputs
+input_scenarios <- 
+  expand.grid(
+    a = seq(0, 100, 10),
+    t = seq(0, 100, 10),
+    m = seq(0, 100, 10)
+  ) %>% 
+  merge(parameters) %>% 
+  tbl_df()
+
+
+simulations <- 
+  input_scenarios %>% 
+  merge(data_frame(i = 1:5)) %>% 
+  mutate(
+    a_norm = normalize(a, t, m),
+    t_norm = normalize(t, a, m),
+    m_norm = normalize(m, a, t),
+    cn_a_w_error = cn_a + rnorm(length(a), sd = 0.25),
+    cn_t_w_error = cn_t + rnorm(length(t), sd = 15),
+    cn_m_w_error = cn_m + rnorm(length(m), sd = 4),
+    cn = calculate_proxy(a, cn_a_w_error, t, cn_t_w_error, m, cn_m_w_error),
+    d13c_a_w_error = d13c_a + rnorm(length(a), sd = 0.2),
+    d13c_t_w_error = d13c_t + rnorm(length(t), sd = 0.6),
+    d13c_m_w_error = d13c_m + rnorm(length(m), sd = 1.5),
+    d13c = calculate_proxy(a, d13c_a_w_error, t, d13c_t_w_error, m, d13c_m_w_error),
+    d15n_a_w_error = d15n_a + rnorm(length(a), sd = 0.2),
+    d15n_t_w_error = d15n_t + rnorm(length(t), sd = 1.8),
+    d15n_m_w_error = d15n_m + rnorm(length(m), sd = 0.5),
+    d15n = calculate_proxy(a, d15n_a_w_error, t, d15n_t_w_error, m, d15n_m_w_error)
+  )
+
+simulations
+```
+
+```{r}
+simulations %>% 
+  ggplot() +
+  aes(cn, t_norm, color = a_norm) +
+  geom_point()
+```
+
+#3D plots
+
+```{r 3D Plots}
+q <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+r <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+q
+r
+s
+```
+
+
+#Working with actual data
+
+```{r data import}
+qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
+qpt_data <-
+  qpt_data %>%
+  mutate("d15N" = d15N - 25)
+qpt_data
+```
+
+#### Optimization test
+
+This test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+```{r Best fits}
+
+optim_function <- function(x, i) {
+  a <- x[1]
+  t <- x[2]
+  m <- 1 - a - t
+  dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
+  d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
+  d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
+  
+  dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
+  d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
+  d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
+  
+  i <- 2 #x[3]
+  sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
+}
+
+best_fit <- optim(c(0.3, 0.3), optim_function, method = "BFGS")
+best_fit
+```
+
+
+
+Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
+
+This might allow us to see some second-best fits, i.e. local minima.
+```{r Optimization space tiles}
+expand.grid(
+  a = seq(0, 1, by = 0.1),
+  t = seq(0, 1, by = 0.1)
+) %>% 
+  mutate(
+    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y))) 
+    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
+  ) %>% 
+  ggplot() +
+  aes(a, t) +
+  geom_tile(mapping = aes(fill = log(optim_result))) +
+  geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
+```
+
+
+
+```{r plot data alone}
+# bsiplot <- 
+#   data %>% 
+#   mutate(grp = "group") %>% 
+#   ggplot() +
+#   aes(x = Age, y = Bsi, group = grp, color = C.N) +
+#   geom_line(color = "Black") +
+#   geom_point()
+
+test_plot <- 
+  qpt_data %>%
+  gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
+  mutate(val = parse_number(val)) %>% 
+  ggplot() +
+  aes(Age, val, group = var) +
+  geom_smooth(method = "lm", color = "red") +
+  geom_smooth(method = "loess", span = 0.75) +
+  geom_point() +
+  facet_grid(var~., scales = "free_y", switch = "y") +
+  scale_x_reverse(expand = c(0,500))
+
+test_plot
+
+
+
+#bsiplot
+```
+#3D plot of data
+
+```{r}
+dataplot <- 
+  plot_ly() %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = qpt_data$Age) %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+dataplot
+```
+
+
+
+
+#3D plots of data and model
+
+```{r}
+q2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+r2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+s2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+q2
+r2
+s2
+```
+
+#2D plots of data and model
+
+Since it looks like nearly all the variability is in C:N and d13C, we're just going to focus on that.
+
+```{r}
+sim_as_tib <- as_tibble(simulations)
+
+sim_and_data <- 
+  ggplot() +
+  geom_point(simulations, x = simulations$cn, y = simulations$d13c, aes(color = simulations$d15n)) +
+  geom_point(data, x = data$C.N, y = data$d13C, aes(color = data$Age))
+data
+  
+sim_and_data
+```
+
+```{r Contour Plot}
+#This will crash R...
+sim_contour <- 
+  simulations %>% 
+  ggplot() +
+  aes(cn, d13c, z = d15n) +
+  geom_contour()
+```
+
+
+
+#PCA
+
+How well do the three proxies predict each of the input percentages? i.e. where does a_norm plot on a PCA of C:N, d13C, and d15N?
+
+```{r PCA}
+proxy_results <- simulations %>% 
+  select("cn", "d13c", "d15n") %>% 
+  filter(!is.na(cn))
+
+proxy_results
+
+pca1 <- prcomp(proxy_results, scale. = TRUE)
+loadings <- pca1$rotation
+loadings #returns cn, 13c, and 15n in terms of pc1-3
+
+pca1
+
+cn_loadings <- loadings[1, 1:3]
+d13c_loadings <- loadings[2, 1:3]
+d15n_loadings <- loadings[3, 1:3]
+```
+
+```{r 3D PCA plot}
+scores <- pca1$x
+scores
+
+as_data_frame(scores) %>% 
+  plot_ly(x = ~PC1, y = ~PC2, z = ~PC3) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "PC1"),
+                      yaxis = list(title = 'PC2'),
+                      zaxis = list(title = 'PC3')))
+```
+
+
+##Mapping data onto PCA
+
+The "loadings" from PCA1 allow us to load the data points onto the PCA space.
+
+```{r}
+qpt_data %>% 
+  mutate(PC1 = loadings * qpt_data[d13C, d])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Another PCA using FactoMineR
+
+This gives you a different set of components than the other PCA...
+
+```{r FactoMineR PCA}
+pca3 = PCA(proxy_results, graph = FALSE)
+as_data_frame(pca3$ind$coord) %>% 
+  mutate(a_norm = simulations['a_norm']) %>% 
+  plot_ly(x = ~Dim.1, y = ~Dim.2, z = ~Dim.3, color = ~a_norm) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "PC1"),
+                      yaxis = list(title = 'PC2'),
+                      zaxis = list(title = 'PC3')))
+
+#shows that PC1 and PC2 explain 90% of the data
+pca3$eig
+pca3$var
+
+quicktest <- as_data_frame(pca3$ind$coord) %>% 
+  mutate(a_norm = simulations['a_norm'])
+
+
+```
+
+
+#Useful examples
+
+```{r}
+calculate_x <- function(a, b, c) {
+  a^2 - b + sqrt(c)
+}
+
+
+scenarios <- 
+  expand.grid(
+    a = c(1, 5, 20),
+    b = c(-2, 0, 1),
+    c = c(1, 100)
+  ) 
+
+simulations <- 
+  scenarios %>% 
+  merge(data_frame(i = 1:500)) %>% 
+  mutate(
+    a_w_error = a + rnorm(length(a), sd = 5),
+    b_w_error = b + rnorm(length(b), sd = 0.3),
+    c_w_error = c + rnorm(length(c), sd = 20),
+    x = calculate_x(a_w_error, b_w_error, c_w_error)
+  )
+
+simulations
+```
+
+```{r}
+simulations %>% 
+  gather(var, val, ends_with("error")) %>% 
+  ggplot() + 
+  aes(val, x, color = var) + 
+  geom_point() + 
+  facet_wrap(~var, scales = "free")
+```
+
+```{r}
+mtcars$am[which(mtcars$am == 0)] <- 'Automatic'
+mtcars$am[which(mtcars$am == 1)] <- 'Manual'
+mtcars$am <- as.factor(mtcars$am)
+
+p <- plot_ly(mtcars, x = ~wt, y = ~hp, z = ~qsec, color = ~am, colors = c('#BF382A', '#0C4B8E')) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'Weight'),
+                     yaxis = list(title = 'Gross horsepower'),
+                     zaxis = list(title = '1/4 mile time')))
+
+p
+```
+
