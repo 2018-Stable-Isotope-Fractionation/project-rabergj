@@ -19,6 +19,7 @@ library(tidyverse)
 library(plotly)
 library(stats)
 library(FactoMineR)
+library(Ternary)
 ```
 
 #Background
@@ -155,7 +156,9 @@ s
 qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
 qpt_data <-
   qpt_data %>%
-  mutate("d15N" = d15N - 25)
+  mutate("d15N" = d15N - 25, #This is a relic of the data processing, should fix elsewhere
+         "Bsi" = parse_number(Bsi)
+    )
 qpt_data
 ```
 
@@ -170,19 +173,18 @@ qpt_data
 #   geom_line(color = "Black") +
 #   geom_point()
 
-test_plot <- 
+qpt_data_plot <- 
   qpt_data %>%
   gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
-  mutate(val = parse_number(val)) %>% 
   ggplot() +
   aes(Age, val, group = var) +
-  geom_smooth(method = "lm", color = "red") +
-  geom_smooth(method = "loess", span = 0.75) +
+  #geom_smooth(method = "lm", color = "red") +
+  geom_smooth(method = "loess", span = 0.2) +
   geom_point() +
   facet_grid(var~., scales = "free_y", switch = "y") +
   scale_x_reverse(expand = c(0,500))
 
-test_plot
+qpt_data_plot
 #bsiplot
 ```
 
@@ -261,19 +263,47 @@ Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i
 
 This might allow us to see some second-best fits, i.e. local minima.
 ```{r Optimization space tiles}
-expand.grid(
+tiles <- expand.grid(
   a = seq(0, 1, by = 0.1),
   t = seq(0, 1, by = 0.1)
 ) %>% 
   mutate(
     optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y))) 
     #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
-  ) %>% 
+  ) 
+
+
+tiles %>% 
   ggplot() +
   aes(a, t) +
   geom_tile(mapping = aes(fill = log(optim_result))) +
   geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
 ```
+
+
+##Ternary diagrams
+
+```{r}
+#ggtern looks better, but couldn't get it to install
+
+TernaryPlot(
+  alab = "a", blab = "t", clab = "m"
+)
+
+ternary_data <- 
+  tiles #for now
+
+AddToTernary(points, tiles)
+```
+
+
+
+
+
+
+
+
+
 
 
 
