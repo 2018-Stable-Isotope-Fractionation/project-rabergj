@@ -297,14 +297,12 @@ data
 sim_and_data
 ```
 
-```{r Contour Plot}
-#This will crash R...
-sim_contour <- 
-  simulations %>% 
-  ggplot() +
-  aes(cn, d13c, z = d15n) +
-  geom_contour()
-```
+
+
+
+
+
+
 
 
 
