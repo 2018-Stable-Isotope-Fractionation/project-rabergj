@@ -139,7 +139,7 @@ r <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>%
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
 
-s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm) %>% 
+s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm, size = ~t_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
@@ -147,6 +147,38 @@ s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm) %>%
 q
 r
 s
+```
+
+
+```{r}
+u <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~cn, size = 1, sizes = c(1, 10)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "a_norm"),
+                      yaxis = list(title = 't_norm'),
+                      zaxis = list(title = 'm_norm')))
+
+v <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d13c, size = 1, sizes = c(1, 10)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "a_norm"),
+                      yaxis = list(title = 't_norm'),
+                      zaxis = list(title = 'm_norm')))
+
+w <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d15n, size = 1, sizes = c(1, 10)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = "a_norm"),
+                      yaxis = list(title = 't_norm'),
+                      zaxis = list(title = 'm_norm')))
+
+u
+v
+w
+
+#should do these as ternary plots
+
+# TernaryPlot()
+# tern_points <- 
+#   simulations["a_norm", "t_norm","m_norm"]
+# TernaryPoints(simulations)
 ```
 
 
@@ -327,9 +359,12 @@ loadings #returns cn, 13c, and 15n in terms of pc1-3
 
 pca1
 
-cn_loadings <- loadings[1, 1:3]
-d13c_loadings <- loadings[2, 1:3]
-d15n_loadings <- loadings[3, 1:3]
+cn_loadings <- loadings[1, ]
+d13c_loadings <- loadings[2, ]
+d15n_loadings <- loadings[3, ]
+
+cn_loadings
+
 ```
 
 ```{r 3D PCA plot}
@@ -352,6 +387,9 @@ The "loadings" from PCA1 allow us to load the data points onto the PCA space.
 ```{r}
 qpt_data %>% 
   mutate(PC1 = loadings * qpt_data[d13C, d])
+
+loadings
+qpt_data
 ```
 
 
