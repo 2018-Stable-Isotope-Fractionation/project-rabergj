@@ -149,7 +149,7 @@ s
 ```
 
 
-#Working with actual data
+#Data
 
 ```{r data import}
 qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
@@ -159,7 +159,78 @@ qpt_data <-
 qpt_data
 ```
 
-#### Optimization test
+##Data plotted alone
+
+```{r plot data alone}
+# bsiplot <- 
+#   data %>% 
+#   mutate(grp = "group") %>% 
+#   ggplot() +
+#   aes(x = Age, y = Bsi, group = grp, color = C.N) +
+#   geom_line(color = "Black") +
+#   geom_point()
+
+test_plot <- 
+  qpt_data %>%
+  gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
+  mutate(val = parse_number(val)) %>% 
+  ggplot() +
+  aes(Age, val, group = var) +
+  geom_smooth(method = "lm", color = "red") +
+  geom_smooth(method = "loess", span = 0.75) +
+  geom_point() +
+  facet_grid(var~., scales = "free_y", switch = "y") +
+  scale_x_reverse(expand = c(0,500))
+
+test_plot
+#bsiplot
+```
+
+##3D plots
+
+```{r 3D plot of data alone}
+dataplot <- 
+  plot_ly() %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = qpt_data$Age) %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+dataplot
+```
+
+
+```{r 3D plots of data and model}
+q2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+r2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+s2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+q2
+r2
+s2
+```
+
+## Optimization test
 
 This test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
 ```{r Best fits}
@@ -203,103 +274,6 @@ expand.grid(
   geom_tile(mapping = aes(fill = log(optim_result))) +
   geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
 ```
-
-
-
-```{r plot data alone}
-# bsiplot <- 
-#   data %>% 
-#   mutate(grp = "group") %>% 
-#   ggplot() +
-#   aes(x = Age, y = Bsi, group = grp, color = C.N) +
-#   geom_line(color = "Black") +
-#   geom_point()
-
-test_plot <- 
-  qpt_data %>%
-  gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
-  mutate(val = parse_number(val)) %>% 
-  ggplot() +
-  aes(Age, val, group = var) +
-  geom_smooth(method = "lm", color = "red") +
-  geom_smooth(method = "loess", span = 0.75) +
-  geom_point() +
-  facet_grid(var~., scales = "free_y", switch = "y") +
-  scale_x_reverse(expand = c(0,500))
-
-test_plot
-
-
-
-#bsiplot
-```
-#3D plot of data
-
-```{r}
-dataplot <- 
-  plot_ly() %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = qpt_data$Age) %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-dataplot
-```
-
-
-
-
-#3D plots of data and model
-
-```{r}
-q2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-r2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-s2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-q2
-r2
-s2
-```
-
-#2D plots of data and model
-
-Since it looks like nearly all the variability is in C:N and d13C, we're just going to focus on that.
-
-```{r}
-sim_as_tib <- as_tibble(simulations)
-
-sim_and_data <- 
-  ggplot() +
-  geom_point(simulations, x = simulations$cn, y = simulations$d13c, aes(color = simulations$d15n)) +
-  geom_point(data, x = data$C.N, y = data$d13C, aes(color = data$Age))
-data
-  
-sim_and_data
-```
-
-
-
-
 
 
 
