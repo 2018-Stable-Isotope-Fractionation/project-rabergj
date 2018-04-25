@@ -342,7 +342,33 @@ ternary_data <-
 AddToTernary(points, tiles)
 ```
 
+#### Ternary Example
 
+```{r, warning=FALSE}
+library(ggtern)
+
+expand.grid(
+  a = seq(0,1, by=0.05),
+  b = seq(0,1, by=0.05),
+  c = seq(0,1, by=0.05)
+) %>% 
+  tbl_df() %>% 
+  mutate(
+    allsum = a+b+c,
+    a = a/allsum,
+    b = b/allsum,
+    c = c/allsum,
+    value = .1 - a*b*c + a*b^2) %>% 
+  filter(!is.na(value), !is.nan(value)) %>% 
+  ggtern(aes(a,b,c)) +
+  # calculate mean estimate in each bin
+  geom_tri_tern(bins = 20, mapping = aes(fill=..stat..,value=value), fun = mean) +
+  # mark minimum
+  geom_point(data = function(df) filter(df, value == min(value, na.rm = TRUE)), 
+             color = "black") +
+  # scale
+  scale_fill_gradientn(colours = rainbow(7)) 
+```
 
 
 
