@@ -27,7 +27,9 @@ library(Ternary)
 We have three sources, aqautic, terrestrial, and aquatic mosses (a, t, m) and three variables we can measure, C:N, carbon isotopes, and nitrogen isotopes. We want to know, for a given amount of input of a, t, and m, what do we expect our C:N, 13C, and 15N to be? Now, since there are errors associated with the proxy values for each input, we're going to do a Monte Carlo simulation that will select from a distribution within those error ranges and give us a range of outputs.
 
 
-#Define parameters
+# Monte Carlo Simulation
+
+##Define parameters
 
 Define a simply mass balance equation that applies for all proxies. Define a set of sce
 
@@ -117,6 +119,18 @@ simulations <-
 simulations
 ```
 
+####Q1 
+
+Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?
+A: Algal for C:N and d15N since it's so different. d13C is tougher to say.
+
+Q: How do the magnitudes of the errors compare across the proxies and accross the sources?
+A: Biggest for C:N, esp terrestrial.
+
+Q: What are the consequences of these uncertainties?
+A: They will introduce uncertainties in our ratios of a, t, and m.
+
+
 ```{r}
 simulations %>% 
   ggplot() +
@@ -124,7 +138,7 @@ simulations %>%
   geom_point()
 ```
 
-#3D plots
+##3D plots of sim
 
 ```{r 3D Plots}
 q <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
