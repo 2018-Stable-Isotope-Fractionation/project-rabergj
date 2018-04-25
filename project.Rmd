@@ -295,12 +295,12 @@ optim_function <- function(x, i) {
   d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
   d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
   
-  i <- 2 #x[3]
   sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
 }
 
-best_fit <- optim(c(0.3, 0.3), optim_function, method = "BFGS")
+best_fit <- optim(c(0.3, 0.3), i = 2, optim_function, method = "BFGS")
 best_fit
+
 ```
 
 
