@@ -19,7 +19,7 @@ library(tidyverse)
 library(plotly)
 library(stats)
 library(FactoMineR)
-library(Ternary)
+library(ggtern)
 ```
 
 #Background
@@ -329,23 +329,12 @@ tiles %>%
 
 ##Ternary diagrams
 
-```{r}
-#ggtern looks better, but couldn't get it to install
 
-TernaryPlot(
-  alab = "a", blab = "t", clab = "m"
-)
-
-ternary_data <- 
-  tiles #for now
-
-AddToTernary(points, tiles)
-```
 
 #### Ternary Example
 
 ```{r, warning=FALSE}
-library(ggtern)
+
 
 expand.grid(
   a = seq(0,1, by=0.05),
