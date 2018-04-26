@@ -232,8 +232,11 @@ qpt_data_plot <-
   scale_x_reverse(expand = c(0,500))
 
 qpt_data_plot
+#qpt_data_plot <- ggplotly(qpt_data_plot)
 #bsiplot
 ```
+
+
 
 ##3D plots
 
@@ -287,20 +290,26 @@ This test is going to take a real data point (C:N, d13c, d15n) and find the opti
 optim_function <- function(x, i) {
   a <- x[1]
   t <- x[2]
-  m <- 1 - a - t
+  m <- x[3]
+  #calculate proxies
   dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
   d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
   d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
-  
+  #calculate errors
   dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
   d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
   d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
-  
+  #calculate distance btwn test point and data
   sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
+  #x[1] + x[2] + x[3] == 1
 }
 
-best_fit <- optim(c(0.3, 0.3), i = 1, optim_function, method = "BFGS")$value
-length(best_fit)
+#iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
+best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+best_fit
+
+# best_fit <- optim(c(0.3, 0.3), i = 2, optim_function, method = "BFGS")
+# best_fit
 
 ```
 
@@ -346,17 +355,27 @@ optim_results <-
   group_by(i) %>%
   do({
     i <- .$i[1]
-    a_optim <- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$par[1]
-    t_optim <- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$par[2]
+    a_optim <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$par[1]
+    t_optim <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$par[2]
     m_optim <- 1 - a_optim - t_optim
-    distance_optim<- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$value
+    distance_optim<- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$value
     data_frame(a_optim = a_optim, t_optim = t_optim, m_optim = m_optim, distance_optim = distance_optim)
   })
 
-
+qpt_data_optim <- 
+  bind_cols(qpt_data, optim_results) %>% 
+  mutate(tot_optim = a_optim + t_optim + m_optim)
+qpt_data_optim
 ```
 
 
+```{r}
+qpt_data_optim %>% 
+  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim, text = paste("Age:", Age))) +
+  geom_point() + 
+  scale_color_gradientn(colors = rainbow(3))
+
+```
 
 
 #### Ternary Example
