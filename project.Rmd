@@ -13,6 +13,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
+#Load Libraries
 
 ```{r "load packages", include=FALSE}
 library(tidyverse)
@@ -298,8 +299,8 @@ optim_function <- function(x, i) {
   sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
 }
 
-best_fit <- optim(c(0.3, 0.3), i = 2, optim_function, method = "BFGS")
-best_fit
+best_fit <- optim(c(0.3, 0.3), i = 1, optim_function, method = "BFGS")$value
+length(best_fit)
 
 ```
 
@@ -328,6 +329,33 @@ tiles %>%
 
 
 ##Ternary diagrams
+
+
+A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
+qpt_data, mutate a column of the optimize function results
+B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
+C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
+
+
+##"do"
+
+```{r}
+
+optim_results <- 
+  data_frame(i = 1:35) %>% 
+  group_by(i) %>%
+  do({
+    i <- .$i[1]
+    a_optim <- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$par[1]
+    t_optim <- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$par[2]
+    m_optim <- 1 - a_optim - t_optim
+    distance_optim<- optim(c(0.3, 0.3), i = i, optim_function, method = "BFGS")$value
+    data_frame(a_optim = a_optim, t_optim = t_optim, m_optim = m_optim, distance_optim = distance_optim)
+  })
+
+
+```
+
 
 
 
