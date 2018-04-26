@@ -166,27 +166,27 @@ s
 
 
 ```{r}
-u <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~cn, size = 1, sizes = c(1, 10)) %>% 
-  add_markers() %>% 
-  layout(scene = list(xaxis = list(title = "a_norm"),
-                      yaxis = list(title = 't_norm'),
-                      zaxis = list(title = 'm_norm')))
-
-v <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d13c, size = 1, sizes = c(1, 10)) %>% 
-  add_markers() %>% 
-  layout(scene = list(xaxis = list(title = "a_norm"),
-                      yaxis = list(title = 't_norm'),
-                      zaxis = list(title = 'm_norm')))
-
-w <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d15n, size = 1, sizes = c(1, 10)) %>% 
-  add_markers() %>% 
-  layout(scene = list(xaxis = list(title = "a_norm"),
-                      yaxis = list(title = 't_norm'),
-                      zaxis = list(title = 'm_norm')))
-
-u
-v
-w
+# u <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~cn, size = 1, sizes = c(1, 10)) %>% 
+#   add_markers() %>% 
+#   layout(scene = list(xaxis = list(title = "a_norm"),
+#                       yaxis = list(title = 't_norm'),
+#                       zaxis = list(title = 'm_norm')))
+# 
+# v <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d13c, size = 1, sizes = c(1, 10)) %>% 
+#   add_markers() %>% 
+#   layout(scene = list(xaxis = list(title = "a_norm"),
+#                       yaxis = list(title = 't_norm'),
+#                       zaxis = list(title = 'm_norm')))
+# 
+# w <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d15n, size = 1, sizes = c(1, 10)) %>% 
+#   add_markers() %>% 
+#   layout(scene = list(xaxis = list(title = "a_norm"),
+#                       yaxis = list(title = 't_norm'),
+#                       zaxis = list(title = 'm_norm')))
+# 
+# u
+# v
+# w
 
 #should do these as ternary plots
 
@@ -272,7 +272,7 @@ r2 <-
 s2 <- 
   plot_ly() %>% 
   add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  #add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red", fill = "blue") %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
@@ -307,8 +307,9 @@ optim_function <- function(x, i) {
 }
 
 #iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
-best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
-best_fit
+best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1, hessian = TRUE)
+best_fit2 <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "Nelder-Mead", hessian = TRUE)
+
 
 # best_fit <- optim(c(0.3, 0.3), i = 2, optim_function, method = "BFGS")
 # best_fit
@@ -346,21 +347,24 @@ tiles %>%
 Now we're going to take our real data and find the optimal values of a, t, and m. 
 
 ```{r}
+qpt_data <- qpt_data %>% mutate(i = row_number())
 
 optim_results <- 
-  data_frame(i = 1:35) %>% 
+  qpt_data %>% select(i) %>% 
   group_by(i) %>%
   do({
     i <- .$i[1]
-    a_optim <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$par[1]
-    t_optim <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$par[2]
-    m_optim <- 1 - a_optim - t_optim
-    distance_optim<- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)$value
-    data_frame(a_optim = a_optim, t_optim = t_optim, m_optim = m_optim, distance_optim = distance_optim)
+    result <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+    data_frame(
+      a_optim = result$par[1] / sum(result$par), 
+      t_optim = result$par[2] / sum(result$par), 
+      m_optim = result$par[3] / sum(result$par), 
+      distance_optim = result$value
+    )
   })
 
 qpt_data_optim <- 
-  bind_cols(qpt_data, optim_results) %>% 
+  left_join(qpt_data, optim_results, by = "i") %>% 
   mutate(tot_optim = a_optim + t_optim + m_optim)
 qpt_data_optim
 ```
@@ -373,10 +377,14 @@ B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted an
 C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
 
 ```{r}
-qpt_data_optim %>% 
+qpt_data_optim_plot <- qpt_data_optim %>% 
   ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim, text = paste("Age:", Age))) +
+  theme_nomask() + 
   geom_point() + 
-  scale_color_gradientn(colors = rainbow(3))
+  scale_color_gradientn(colors = rainbow(3)) +
+  scale_size_continuous(range = c(10,1))
+
+qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
 
 ```
 
@@ -393,6 +401,61 @@ qpt_data_optim %>%
 
 
 #Examples/supplemental
+
+```{r}
+qpt_data_optim %>% 
+  mutate(
+    error = 0.05,
+    a_min = ifelse(a_optim < error, 0, a_optim - error),
+    t_min = ifelse(t_optim < error, 0, t_optim - error),
+    m_min = ifelse(m_optim < error, 0, m_optim - error),
+    a_mean = a_optim - a_min,
+    t_mean = t_optim - t_min,
+    m_mean = m_optim - m_min
+  ) %>% 
+  gather(var, value, a_min, a_mean, t_min, t_mean, m_min, m_mean) %>% 
+  ggplot() +
+  aes(Age, value, fill = var) +
+  geom_area()+
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) + 
+  scale_fill_brewer(palette = "Paired")
+  #geom_bar(stat = "identity") 
+```
+
+
+#### d15N space
+
+```{r, warning=FALSE}
+tern_dataset <- simulations %>% 
+  select(a_norm, t_norm, m_norm, d13c, d15n, cn) %>% 
+  filter(!is.na(d13c),!is.nan(d13c)) %>% 
+  group_by(a_norm, t_norm, m_norm) %>% 
+  summarize_at(vars(d13c, d15n, cn), funs(mean,sd)) 
+
+plot_d13c <- tern_dataset %>% 
+  ggtern(aes(a_norm,t_norm,m_norm)) +
+  aes(value = d13c_mean) +
+  # calculate mean estimate in each bin
+  geom_tri_tern(bins = 5, mapping = aes(fill=..stat..), fun = mean) +
+  scale_fill_gradientn(colours = terrain.colors(10)) +
+  labs(title = "d13C") +
+  geom_point(data = select(
+    qpt_data_optim, a_norm = a_optim, t_norm = t_optim, m_norm = m_optim,
+    d13c_mean = d13C, d15n_mean = d15N, cn_mean = C.N, age = Age
+  ),
+  mapping = aes(color = age)) +
+  scale_color_gradientn(colours = rainbow(3)) +
+  theme_nomask() 
+
+
+plot_d15n <- plot_d13c %+% aes(value = d15n_mean) + labs(title = "d15N")
+plot_cn <- plot_d13c %+% aes(value = cn_mean) + labs(title = "C/N")
+
+grid.arrange(plot_d13c, plot_d15n, plot_cn, nrow = 1)
+```
+
+
 #### Ternary Example
 
 ```{r, warning=FALSE}
