@@ -282,9 +282,11 @@ r2
 s2
 ```
 
-## Optimization test
+# Optimization
 
-This test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+This optimization test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+
+##Optim function
 ```{r Best fits}
 
 optim_function <- function(x, i) {
@@ -313,7 +315,7 @@ best_fit
 
 ```
 
-
+##Optim performance test
 
 Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
 
@@ -337,16 +339,11 @@ tiles %>%
 ```
 
 
-##Ternary diagrams
 
 
-A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
-qpt_data, mutate a column of the optimize function results
-B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
-C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
+#Fit data
 
-
-##"do"
+Now we're going to take our real data and find the optimal values of a, t, and m. 
 
 ```{r}
 
@@ -368,6 +365,12 @@ qpt_data_optim <-
 qpt_data_optim
 ```
 
+##Ternary diagrams
+
+A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
+qpt_data, mutate a column of the optimize function results
+B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
+C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
 
 ```{r}
 qpt_data_optim %>% 
@@ -378,6 +381,18 @@ qpt_data_optim %>%
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+
+#Examples/supplemental
 #### Ternary Example
 
 ```{r, warning=FALSE}
@@ -512,7 +527,7 @@ quicktest <- as_data_frame(pca3$ind$coord) %>%
 ```
 
 
-#Useful examples
+#Other examples
 
 ```{r}
 calculate_x <- function(a, b, c) {
