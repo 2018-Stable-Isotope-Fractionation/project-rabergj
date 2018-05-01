@@ -22,7 +22,6 @@ library(stats)
 library(FactoMineR)
 library(ggtern)
 library(latex2exp)
-library(MixSIAR)
 ```
 
 #Background
@@ -438,15 +437,25 @@ qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
 ## Import results
 
 ```{r}
-p_fac1_1 <- 
-  read_csv("p_fac1.csv") %>% 
-  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
-p_fac1_2 <- 
-  read_csv("p_fac1_2.csv") %>% 
-  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
-p_fac1_3 <- 
-  read_csv("p_fac1_3.csv") %>% 
-  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+# p_fac1_1 <- 
+#   read_csv("p_fac1.csv") %>% 
+#   rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+# p_fac1_2 <- 
+#   read_csv("p_fac1_2.csv") %>% 
+#   rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+# p_fac1_3 <- 
+#   read_csv("p_fac1_3.csv") %>% 
+#   rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+
+p_fac1_1_nosoil <- 
+  read_csv("p_fac1_1_nosoil.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Terrestrial = V3)
+p_fac1_2_nosoil <- 
+  read_csv("p_fac1_2_nosoil.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Terrestrial = V3)
+p_fac1_3_nosoil <- 
+  read_csv("p_fac1_3_nosoil.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Terrestrial = V3)
 
 ```
 
@@ -489,6 +498,41 @@ plot_p_fac1_all <- grid.arrange(plot_p_fac1_1, plot_p_fac1_2, plot_p_fac1_3, nco
 # v1 = moss, v2 = plankton, v3 = soil, v4 = terrestrial
 ```
 
+```{r}
+plot_p_fac1_1_nosoil <- 
+  p_fac1_1_nosoil %>%
+  gather(key = "Source", value = "Input", Mosses, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: First MCMC chain (no soil)")
+
+plot_p_fac1_2_nosoil <- 
+  p_fac1_2_nosoil %>%
+  gather(key = "Source", value = "Input", Mosses, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: Second MCMC chain (no soil)")
+
+plot_p_fac1_3_nosoil <- 
+  p_fac1_3_nosoil %>%
+  gather(key = "Source", value = "Input", Mosses, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: Third MCMC chain (no soil)")
+
+plot_p_fac1_all <- grid.arrange(plot_p_fac1_1_nosoil, plot_p_fac1_2_nosoil, plot_p_fac1_3_nosoil, ncol = 1)
+
+# v1 = moss, v2 = plankton, v3 = soil, v4 = terrestrial
+```
 
 
 
