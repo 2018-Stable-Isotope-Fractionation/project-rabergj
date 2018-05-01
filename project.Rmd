@@ -1,6 +1,6 @@
 ---
-title: "TITLE"
-author: "AUTHOR"
+title: "Paleoecology"
+author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
   html_document: 
@@ -26,14 +26,34 @@ library(latex2exp)
 
 #Background
 
-We have three sources, aqautic, terrestrial, and aquatic mosses (a, t, m) and three variables we can measure, C:N, carbon isotopes, and nitrogen isotopes. We want to know, for a given amount of input of a, t, and m, what do we expect our C:N, 13C, and 15N to be? Now, since there are errors associated with the proxy values for each input, we're going to do a Monte Carlo simulation that will select from a distribution within those error ranges and give us a range of outputs.
+
 
 
 # Monte Carlo Simulation
 
+We have three sources, aqautic, terrestrial, and aquatic mosses (a, t, m) and three variables we can measure, C:N, carbon isotopes, and nitrogen isotopes. We want to know, for a given amount of input of a, t, and m, what do we expect our C:N, $\delta^{13}C$, and $\delta^{15}N$ to be? Now, since there are errors associated with the proxy values for each input, we're going to do a Monte Carlo simulation that will select from a distribution within those error ranges and give us a range of outputs.
+
+![](figures/MC_schematic.png)
+
+
+
 ##Define parameters
 
-Define a simply mass balance equation that applies for all proxies. Define a set of sce
+Define a simple mass balance equation that applies for all proxies. 
+
+Mass balance equation:
+
+$$
+\begin{align*}
+x =& \ \textrm{proxy} \ (\delta^{13}C, \ \delta^{15}N, \ or \ C\!:\!N) \\
+a =& \ \textrm{amount of algae input} \\
+t =& \ \textrm{amount of terretrial plant input} \\
+m =& \ \textrm{amount of macrophyte/moss input} \\
+x_{total} * (a + t + m) =& (a * x_a + t * x_t + m * x_m)
+\end{align*}
+$$
+
+Task: define the normalization function (the evil plankton told me to do it)
 
 ```{r Simulate}
 #General normalization equation
@@ -133,12 +153,16 @@ Q: What are the consequences of these uncertainties?
 A: They will introduce uncertainties in our ratios of a, t, and m.
 
 
-```{r}
+```{r, warning=FALSE}
 simulations %>% 
   ggplot() +
   aes(cn, t_norm, color = a_norm) +
   geom_point()
 ```
+####Q2
+Q: Did we simulate the space well enough?
+A: Probably. Definitely gaps that we could fill in, but get the overall picture.
+
 
 ##3D plots of sim
 
@@ -155,7 +179,7 @@ r <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>%
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
 
-s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm, size = ~t_norm) %>% 
+s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
@@ -164,42 +188,14 @@ q
 r
 s
 ```
-
-
-```{r}
-# u <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~cn, size = 1, sizes = c(1, 10)) %>% 
-#   add_markers() %>% 
-#   layout(scene = list(xaxis = list(title = "a_norm"),
-#                       yaxis = list(title = 't_norm'),
-#                       zaxis = list(title = 'm_norm')))
-# 
-# v <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d13c, size = 1, sizes = c(1, 10)) %>% 
-#   add_markers() %>% 
-#   layout(scene = list(xaxis = list(title = "a_norm"),
-#                       yaxis = list(title = 't_norm'),
-#                       zaxis = list(title = 'm_norm')))
-# 
-# w <- plot_ly(simulations, x = ~a_norm, y = ~t_norm, z = ~m_norm, color = ~d15n, size = 1, sizes = c(1, 10)) %>% 
-#   add_markers() %>% 
-#   layout(scene = list(xaxis = list(title = "a_norm"),
-#                       yaxis = list(title = 't_norm'),
-#                       zaxis = list(title = 'm_norm')))
-# 
-# u
-# v
-# w
-
-#should do these as ternary plots
-
-# TernaryPlot()
-# tern_points <- 
-#   simulations["a_norm", "t_norm","m_norm"]
-# TernaryPoints(simulations)
-```
+###Q3
+Q: What are we looking at here?
+A: The space of simulated possibilities.
 
 
 #Data
 
+Import my EA data
 ```{r data import}
 qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
 qpt_data <-
@@ -208,23 +204,19 @@ qpt_data <-
          "Bsi" = parse_number(Bsi)
     )
 qpt_data
+```
 
 
+Import source data from Florian 2015
+```{r source data import}
 source_data = read.csv("qpt_sources.csv")
 source_data
-
 ```
+
 
 ##Data plotted alone
 
 ```{r plot data alone}
-# bsiplot <- 
-#   data %>% 
-#   mutate(grp = "group") %>% 
-#   ggplot() +
-#   aes(x = Age, y = Bsi, group = grp, color = C.N) +
-#   geom_line(color = "Black") +
-#   geom_point()
 
 qpt_data_plot <- 
   qpt_data %>%
@@ -237,15 +229,15 @@ qpt_data_plot <-
   facet_grid(var~., scales = "free_y", switch = "y") +
   scale_x_reverse(expand = c(0,500)) + 
   scale_y_continuous(name = "") +
-  #scale_y_continuous(name = latex2exp::TeX("$\\delta^{15}N_{in}$")) +
   xlab("Age (years)") +
   labs(title = "Lake QPT")
 
 qpt_data_plot
-#qpt_data_plot <- ggplotly(qpt_data_plot)
-#bsiplot
 ```
 
+####Q4
+Q: Does the EA data align with the BSi? What's the same and what's different?
+A: Kind of... The overall pattern of things happening until ~5ka, followed by a stable period until ~ 1ka, and finally some changes up until the present seems to hold, but the trends are not as simple as they are for BSi.
 
 
 ##3D plots
@@ -263,10 +255,12 @@ dataplot <-
 dataplot
 ```
 
+####Q5
+Q: Which variables explain most of the changes? Which explains the least?
+A: Variation is controlled by d13C and C:N and not really by d15N.
 
-
-
-
+Q: Is there a clear age trend? What's your quick hypothesis as to what's causing it?
+A: Yes! Decreasing d13C and increasing C:N. Both suggest increasing terrestrial input.
 
 
 ## Isospace
