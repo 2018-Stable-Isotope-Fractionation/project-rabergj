@@ -23,6 +23,7 @@ Script file to run wolves example without GUI
 
 # Load MixSIAR package
 ```{r}
+library(tidyverse)
 library(MixSIAR)
 ```
 
@@ -43,21 +44,21 @@ i.e. your:
 
 To run on your data, replace the system.file call with the path to your file
 
+## QPT example
+
 ```{r}
-#mix.filename <- system.file("extdata", "wolves_consumer.csv", package = "MixSIAR")
-mix.filename <- system.file("extdata", "qpt_consumer.csv")
+# To run on your data, replace the system.file call with the path to your file
+mix.filename <- file.path("data", "qpt_consumer.csv")
 
 # Load mixture data
-
-
-
 mix <- load_mix_data(filename=mix.filename, 
                      iso_names=c("d13C","d15N"), 
-                     factors="Age", 
-                     fac_random=TRUE, 
-                     fac_nested=FALSE, 
+                     factors=c("Age"), 
+                     fac_random=c(TRUE), 
+                     fac_nested=c(FALSE), 
                      cont_effects=NULL)
 ```
+
 
 # Load source data
 i.e. your:
@@ -70,6 +71,8 @@ i.e. your:
  'data_type': "means" or "raw", is your source data as means+SD, or do you have raw data
 
 
+## Wolves example
+
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
 source.filename <- system.file("extdata", "wolves_sources.csv", package = "MixSIAR")
@@ -79,6 +82,18 @@ source <- load_source_data(filename=source.filename, source_factors="Region",
                             conc_dep=FALSE, data_type="means", mix)
 ```
 
+## QPT sources
+
+```{r}
+# To run on your data, replace the system.file call with the path to your file
+source.filename <- file.path("data", "qpt_sources_nosoil.csv")
+
+# Load source data
+source <- load_source_data(filename=source.filename, source_factors=NULL, 
+                            conc_dep=FALSE, data_type="means", mix)
+```
+
+
 #Load discrimination data
 i.e. your:
    -Trophic Enrichment Factor (TEF) / fractionation values (trophic ecology/diet)
@@ -86,9 +101,11 @@ i.e. your:
 
 'filename' - name of the CSV file with discrimination data
 
+## QPT discriminations
+
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-discr.filename <- system.file("extdata", "wolves_discrimination.csv", package = "MixSIAR")
+discr.filename <- file.path("data", "qpt_discrimination_nosoil.csv")
 
 # Load discrimination data
 discr <- load_discr_data(filename=discr.filename, mix)
@@ -108,7 +125,7 @@ Are one or more of your sources confounded/hidden?
 plot_data(filename="isospace_plot", 
           plot_save_pdf=TRUE,
           plot_save_png=FALSE,
-          mix,source,discr)
+          mix,source,discr) 
 ```
 
 If 2 isotopes/tracers, calculate normalized surface area of the convex hull polygon(s)
@@ -150,7 +167,7 @@ There are 3 error term options available:
          This is the same behavior as 'siarsolo' in SIAR.
 
 ```{r}
-model_filename <- "MixSIAR_model.txt"
+model_filename <- file.path("models", "MixSIAR_model.txt")
 resid_err <- TRUE
 process_err <- TRUE
 write_JAGS_model(model_filename, resid_err, process_err, mix, source)
@@ -195,21 +212,21 @@ Choose output options (see ?output_options for details)
 
 ```{r}
 output_options <- list(summary_save = TRUE,                 
-                       summary_name = "summary_statistics", 
-                       sup_post = FALSE,                    
+                       summary_name = file.path("output", "summary_statistics"), 
+                       sup_post = TRUE,                    
                        plot_post_save_pdf = TRUE,           
-                       plot_post_name = "posterior_density",
-                       sup_pairs = FALSE,             
+                       plot_post_name = file.path("output", "posterior_density"),
+                       sup_pairs = TRUE,             
                        plot_pairs_save_pdf = TRUE,    
-                       plot_pairs_name = "pairs_plot",
+                       plot_pairs_name = file.path("output", "pairs_plot"),
                        sup_xy = TRUE,           
-                       plot_xy_save_pdf = FALSE,
-                       plot_xy_name = "xy_plot",
+                       plot_xy_save_pdf = TRUE,
+                       plot_xy_name = file.path("output", "xy_plot"),
                        gelman = TRUE,
                        heidel = FALSE,  
                        geweke = TRUE,   
                        diag_save = TRUE,
-                       diag_name = "diagnostics",
+                       diag_name = file.path("output", "diagnostics"),
                        indiv_effect = FALSE,       
                        plot_post_save_png = FALSE, 
                        plot_pairs_save_png = FALSE,
@@ -220,3 +237,9 @@ output_options <- list(summary_save = TRUE,
 # Create diagnostics, summary statistics, and posterior plots
 output_JAGS(jags.1, mix, source, output_options)
 ```
+
+
+```{r}
+#read_delim(file = file.path("output", "summary_statistics.txt"), skip = 7, delim = "")
+```
+
