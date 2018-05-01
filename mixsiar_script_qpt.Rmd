@@ -44,16 +44,18 @@ i.e. your:
 To run on your data, replace the system.file call with the path to your file
 
 ```{r}
-mix.filename <- system.file("extdata", "wolves_consumer.csv", package = "MixSIAR")
-
+#mix.filename <- system.file("extdata", "wolves_consumer.csv", package = "MixSIAR")
+mix.filename <- system.file("extdata", "qpt_consumer.csv")
 
 # Load mixture data
 
+
+
 mix <- load_mix_data(filename=mix.filename, 
                      iso_names=c("d13C","d15N"), 
-                     factors=c("Region","Pack"), 
-                     fac_random=c(TRUE,TRUE), 
-                     fac_nested=c(FALSE,TRUE), 
+                     factors="Age", 
+                     fac_random=TRUE, 
+                     fac_nested=FALSE, 
                      cont_effects=NULL)
 ```
 
