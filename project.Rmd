@@ -271,7 +271,7 @@ dataplot
 
 ## Isospace
 
-```{r}
+```{r, warning=FALSE}
 isospace <- 
   ggplot() + 
   geom_point(data = qpt_data, aes(x = d13C, y = d15N, color = Age)) + 
