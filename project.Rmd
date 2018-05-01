@@ -21,6 +21,8 @@ library(plotly)
 library(stats)
 library(FactoMineR)
 library(ggtern)
+library(latex2exp)
+library(MixSIAR)
 ```
 
 #Background
@@ -207,6 +209,11 @@ qpt_data <-
          "Bsi" = parse_number(Bsi)
     )
 qpt_data
+
+
+source_data = read.csv("qpt_sources.csv")
+source_data
+
 ```
 
 ##Data plotted alone
@@ -229,7 +236,11 @@ qpt_data_plot <-
   geom_smooth(method = "loess", span = 0.2) +
   geom_point() +
   facet_grid(var~., scales = "free_y", switch = "y") +
-  scale_x_reverse(expand = c(0,500))
+  scale_x_reverse(expand = c(0,500)) + 
+  scale_y_continuous(name = "") +
+  #scale_y_continuous(name = latex2exp::TeX("$\\delta^{15}N_{in}$")) +
+  xlab("Age (years)") +
+  labs(title = "Lake QPT")
 
 qpt_data_plot
 #qpt_data_plot <- ggplotly(qpt_data_plot)
@@ -245,11 +256,42 @@ dataplot <-
   plot_ly() %>% 
   add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = qpt_data$Age) %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      yaxis = list(title = "delta13C"),
+                      zaxis = list(title = "delta15N")
+                      )) %>% 
+  colorbar(title = "Age")
 
 dataplot
 ```
+
+
+
+
+
+
+
+## Isospace
+
+```{r}
+isospace <- 
+  ggplot() + 
+  geom_point(data = qpt_data, aes(x = d13C, y = d15N, color = Age)) + 
+  #geom_path(data = qpt_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
+  geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
+  geom_errorbar(data = source_data, aes(
+    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
+  geom_errorbarh(data = source_data, aes(
+    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = X, hjust = -0.5, vjust = 2)) +
+  labs(
+    title = "Lake QPT Isospace", 
+    color = "Age (yrs)", 
+    x = latex2exp::TeX("$\\delta^{13}C$"), 
+    y = latex2exp::TeX("$\\delta^{15}N$"))
+isospace
+```
+
 
 
 ```{r 3D plots of data and model}
@@ -391,10 +433,61 @@ qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
 
 
 
+#MixSIAR
+
+## Import results
+
+```{r}
+p_fac1_1 <- 
+  read_csv("p_fac1.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+p_fac1_2 <- 
+  read_csv("p_fac1_2.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+p_fac1_3 <- 
+  read_csv("p_fac1_3.csv") %>% 
+  rename(Mosses = V1, Plankton = V2, Soil = V3, Terrestrial = V4)
+
+```
 
 
+## Plot results
 
+```{r}
+plot_p_fac1_1 <- 
+  p_fac1_1 %>%
+  gather(key = "Source", value = "Input", Mosses, Soil, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: First MCMC chain")
 
+plot_p_fac1_2 <- 
+  p_fac1_2 %>%
+  gather(key = "Source", value = "Input", Mosses, Soil, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: Second MCMC chain")
+
+plot_p_fac1_3 <- 
+  p_fac1_3 %>%
+  gather(key = "Source", value = "Input", Mosses, Soil, Plankton, Terrestrial) %>% 
+  ggplot() +
+  aes(Age, Input, fill = Source) +
+  geom_area() +
+  scale_y_continuous(labels = scales::percent, expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  labs(title = "Results: Third MCMC chain")
+
+plot_p_fac1_all <- grid.arrange(plot_p_fac1_1, plot_p_fac1_2, plot_p_fac1_3, ncol = 1)
+
+# v1 = moss, v2 = plankton, v3 = soil, v4 = terrestrial
+```
 
 
 
@@ -483,6 +576,14 @@ expand.grid(
   # scale
   scale_fill_gradientn(colours = rainbow(7)) 
 ```
+
+
+
+
+
+
+
+
 
 
 
