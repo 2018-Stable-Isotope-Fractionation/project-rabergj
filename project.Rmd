@@ -321,6 +321,23 @@ s2
 
 This optimization test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
 
+How do we know how good our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data.
+
+$$
+distance = \sqrt{(x_{model} - x_{real})^2 + (y_{model} - y_{real})^2 +(z_{model} - z_{real})^2}
+$$
+But being really far off in $\delta^{13}C$ isn't so bad because there's a lot of variation. Being 2 permille off for carbon is not nearly as bad as being 2 permille off for nitrogen.
+
+To deal with this, we'll also normalize these distances by their errors.
+
+$$
+\begin{align*}
+x =& \ \delta^{13}C \\
+y =& \ \delta^{15}C \\
+z =& \ C:N \\
+distance =& \sqrt{(x_{model} - x_{real})^2 / (SD_x)^2 + (y_{model} - y_{real})^2  / (SD_y)^2 +(z_{model} - z_{real})^2  / (SD_z)^2}
+\end{align*}
+$$
 ##Optim function
 ```{r Best fits}
 
@@ -328,17 +345,19 @@ optim_function <- function(x, i) {
   a <- x[1]
   t <- x[2]
   m <- x[3]
+  
   #calculate proxies
   dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
   d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
   d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
+  
   #calculate errors
   dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
   d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
   d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
+  
   #calculate distance btwn test point and data
   sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
-  #x[1] + x[2] + x[3] == 1
 }
 
 #iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
