@@ -182,7 +182,7 @@ A: Probably. Definitely gaps that we could fill in, but get the overall picture.
 
 ##3D plots of sim
 
-```{r 3D Plots}
+```{r 3D Plots, warning=FALSE}
 q <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
@@ -241,8 +241,6 @@ qpt_data
 
 ##Data plotted alone
 
-
-
 ```{r plot data alone}
 
 qpt_data_plot <- 
@@ -269,6 +267,7 @@ A: Kind of... The overall pattern of things happening until ~5ka, followed by a 
 
 ##3D plots
 
+### Data alone
 ```{r 3D plot of data alone}
 dataplot <- 
   plot_ly() %>% 
@@ -290,32 +289,65 @@ Q: Is there a clear age trend? What's your quick hypothesis as to what's causing
 A: Yes! Decreasing d13C and increasing C:N. Both suggest increasing terrestrial input.
 
 
-```{r 3D plot of data alone normalized}
-dataplot_norm <- 
-  plot_ly() %>% 
-  add_markers(qpt_data, x = qpt_data$C.N / mean(qpt_data$C.N), y = qpt_data$d13C / mean(qpt_data$d13C), z = qpt_data$d15N / mean(qpt_data$d15N), color = qpt_data$Age) %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = "delta13C"),
-                      zaxis = list(title = "delta15N")
-                      )) %>% 
-  colorbar(title = "Age")
 
-dataplot_norm
+### Data and Simulation Space
+
+Now let's pot our data onto our simulation space and see what we find.
+
+```{r 3D plots of data and model, warning=FALSE}
+q2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+r2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+s2 <- 
+  plot_ly() %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
+  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = 'delta13C'),
+                      zaxis = list(title = 'delta15N')))
+
+q2
+r2
+s2
 ```
+
+#### Q6
+Q: Do the data fall within the simulation space?
+A: No, only the modern fall into the simulation space.
+
+Q: If no, why might that be the case?
+A: Perhaps we're missing a crucial source. Perhaps our measured sources at Chris' lake aren't the same as at QPT (his is less vegetated). Perhaps there's an unaccounted for fractionation (or preferential metabolism for C:N) between the source and when we take the core.
+
 
 
 # Optimization
 
-This optimization test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+So now we're going to try to quantify what we just observed visually. 
 
-How do we know how good our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data.
+We're going to perform an optimization test that is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+
+How do we know how well our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data. If the distance is zero, the model is right on top of our data point and we have a perfect fit!
 
 $$
 distance = \sqrt{(x_{model} - x_{real})^2 + (y_{model} - y_{real})^2 +(z_{model} - z_{real})^2}
 $$
-But being really far off in $\delta^{13}C$ isn't so bad because there's a lot of variation. Being 2 permille off for carbon is not nearly as bad as being 2 permille off for nitrogen.
 
-To deal with this, we'll also normalize these distances by their errors. It's a little hand-wavy, but should give us a better answer than no error consideration at all.
+But being really far off in $\delta^{13}C$ isn't so bad because there's a lot of variation. In other words, being 2 permille off for carbon is not nearly as bad as being 2 permille off for nitrogen.
+
+To deal with this, we'll also normalize these distances by their standard deviations. It's a little hand-wavy, but should give us a better answer than no error consideration at all.
 
 $$
 \begin{align*}
@@ -329,6 +361,9 @@ $$
 
 
 ##Optim function
+
+Here we'll define our optimization function. It takes a give combination of sources (c(a, t, m)) and a real piece of data (with index = i) and spits out the distance between the value predicted by the sources and the real value.
+
 ```{r Best fits}
 
 optim_function <- function(x, i) {
@@ -349,41 +384,20 @@ optim_function <- function(x, i) {
   #calculate distance btwn test point and data
   sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
 }
-
-#iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
-best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1, hessian = TRUE)
-best_fit2 <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "Nelder-Mead", hessian = TRUE)
 ```
 
-##Optim performance test
-
-Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
-
-This might allow us to see some second-best fits, i.e. local minima.
-```{r Optimization space tiles}
-tiles <- expand.grid(
-  a = seq(0, 1, by = 0.1),
-  t = seq(0, 1, by = 0.1)
-) %>% 
-  mutate(
-    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y))) 
-    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
-  ) 
-
-
-tiles %>% 
-  ggplot() +
-  aes(a, t) +
-  geom_tile(mapping = aes(fill = log(optim_result))) +
-  geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
+Let's examine what this puts out:
+```{r}
+best_fit_i = 3
+best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+best_fit
 ```
 
 
 
+##Fit data
 
-#Fit data
-
-Now we're going to take our real data and find the optimal values of a, t, and m. 
+Now we're going to take our full data set and find the optimal values of a, t, and m. 
 
 ```{r}
 qpt_data <- qpt_data %>% mutate(i = row_number())
@@ -394,11 +408,13 @@ optim_results <-
   do({
     i <- .$i[1]
     result <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+    # normalize output
     data_frame(
       a_optim = result$par[1] / sum(result$par), 
       t_optim = result$par[2] / sum(result$par), 
       m_optim = result$par[3] / sum(result$par), 
-      distance_optim = result$value
+      distance_optim = result$value,
+      convergence = result$convergence # If != 0, didn't converge
     )
   })
 
@@ -408,33 +424,122 @@ qpt_data_optim <-
 qpt_data_optim
 ```
 
-##Ternary diagrams
 
-A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
-qpt_data, mutate a column of the optimize function results
-B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
-C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
+## Plot data (ternary)
+
+Here, we'll create a ternary diagram with a, t, m (norm) as the axes and all our data points plotted. We'll color them by age and size them by their best fit distances.
 
 ```{r}
 qpt_data_optim_plot <- qpt_data_optim %>% 
-  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim, text = paste("Age:", Age))) +
+  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim)) +
   theme_nomask() + 
   geom_point() + 
   scale_color_gradientn(colors = rainbow(3)) +
   scale_size_continuous(range = c(10,1))
 
-qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
+qpt_data_optim_plot
 
 ```
+
+#### Q7
+Q: Was our model able to fit the points well? Any points that look suspect?
+A: Some points appear to be fit pretty well, i.e. they're sitting somewhere in the middle of the plot, but many points are right up against the wall.
+
+Q: Do the suspect points make sense? Think back to the 3D plots from earlier.
+A: Yes; most of the points against the wall have old ages. These were the ones that fell out of our "cloud", aka our simulation space.
+
+
+## Assess fits
+
+Now we have some results, but we already suspect that some of the fits we got from our model might not be so great. Let's analyze how good these fits are.
+
+
+#### T2
+Task: Let's see how this works for data points i = 3, 15, and 20 (and 5 if there's time)
+
+```{r}
+best_fit_i = 20
+best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+best_fit
+
+best_fit_a = best_fit$par[1] / sum(best_fit$par)
+best_fit_t = best_fit$par[2] / sum(best_fit$par)
+best_fit_m = best_fit$par[3] / sum(best_fit$par)
+```
+
+
+This is useful, but it's still just spitting out a number. It doesn't really give us a sense of how variable the fit is. So let's do some plotting.
+
+### Tile plot
+
+Now let's make a plot of a vs. t, calculate how well each (a,t) fits data point i (for the optimized m), and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
+
+This will allow us to see how much wiggle room we have with our fit. It might even allow us to see some second-best fits, i.e. local minima.
+
+```{r Optimization space tiles}
+tiles <- expand.grid(
+  a = seq(0, 1, by = 0.01),
+  t = seq(0, 1, by = 0.01)
+) %>% 
+  mutate(
+    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_m), best_fit_i)) 
+    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
+  ) 
+
+
+tiles %>% 
+  ggplot() +
+  aes(a, t) +
+  geom_tile(mapping = aes(fill = log(optim_result))) +
+  geom_point(data = data_frame(a = best_fit_a, t = best_fit_t), color = "red")
+```
+
+
+###Ternary tile plot
+
+```{r, warning=FALSE}
+expand.grid(
+  a = seq(0,1, by=0.05),
+  t = seq(0,1, by=0.05),
+  m = seq(0,1, by=0.05)
+) %>% 
+  tbl_df() %>% 
+  mutate(
+    allsum = a+t+m,
+    a = a/allsum,
+    t = t/allsum,
+    m = m/allsum,
+    value = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_m), best_fit_i))) %>% 
+  filter(!is.na(value), !is.nan(value)) %>% 
+  ggtern(aes(a,t,m)) +
+  # calculate mean estimate in each bin
+  geom_tri_tern(bins = 20, mapping = aes(fill=..stat..,value=value), fun = mean) +
+  # mark minimum
+  geom_point(data = qpt_data_optim, aes(
+    x = qpt_data_optim$a_optim[best_fit_i], 
+    y = qpt_data_optim$t_optim[best_fit_i], 
+    z = qpt_data_optim$m_optim[best_fit_i]), color = "red") 
+  # + scale_fill_gradientn(colours = rainbow(7)) 
+```
+
+
+#### Q8
+Q: What did you learn about the goodness of our fits?
+A: Some fits (i = 3) really sit in a well. Others are much broader, i.e. we could drastically change a, t, or m and not increase our distance too much.
+
+Q: Did it look like all of the points had a global minimum on our simulation space?
+A: No. i = 20 is up against the wall.
+
+Q: What conclusions can you draw? How well did this model work?
+A: There's a lot of hidden uncertainty... know your model and assess it!! Overall, the model did alright, but a lot of points fall out of the simulation space.
+
+
+
 
 
 
 
 #MixSIAR
-
-
-
-
 
 ## Isospace
 
@@ -449,7 +554,7 @@ isospace <-
     x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
   geom_errorbarh(data = source_data, aes(
     x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
-  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = X, hjust = -0.5, vjust = 2)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
     title = "Lake QPT Isospace", 
     color = "Age (yrs)", 
@@ -471,47 +576,14 @@ isospace_cn <-
     x = Meand13C, y = MeanCN, ymin = MeanCN - SDCN, ymax = MeanCN + SDCN)) +
   geom_errorbarh(data = source_data_cn, aes(
     x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
-  geom_text(data = source_data_cn, aes(x = Meand13C, y = MeanCN, label = X, hjust = -0.5, vjust = 2)) +
+  geom_text(data = source_data_cn, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
     title = "Lake QPT Isospace", 
     color = "Age (yrs)", 
     x = latex2exp::TeX("$\\delta^{13}C$"), 
     y = latex2exp::TeX("$\\C:N$"))
 
-#grid.arrange(isospace, isospace_cn, nrow = 1)
-
-isospace
 isospace_cn
-```
-
-```{r 3D plots of data and model}
-q2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-r2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-s2 <- 
-  plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
-  #add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red", fill = "blue") %>% 
-  layout(scene = list(xaxis = list(title = "C:N"),
-                      yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
-
-q2
-r2
-s2
 ```
 
 
