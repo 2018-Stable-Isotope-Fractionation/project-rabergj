@@ -22,6 +22,7 @@ library(stats)
 library(FactoMineR)
 library(ggtern)
 library(latex2exp)
+library(knitr)
 ```
 
 #Background
@@ -37,7 +38,9 @@ We have three sources, aqautic, terrestrial, and aquatic mosses (a, t, m) and th
 
 
 
-##Define parameters
+
+
+## Mass Balance
 
 Define a simple mass balance equation that applies for all proxies. 
 
@@ -46,16 +49,18 @@ Mass balance equation:
 $$
 \begin{align*}
 x =& \ \textrm{proxy} \ (\delta^{13}C, \ \delta^{15}N, \ or \ C\!:\!N) \\
-a =& \ \textrm{amount of algae input} \\
+a =& \ \textrm{amount of algal input} \\
 t =& \ \textrm{amount of terretrial plant input} \\
 m =& \ \textrm{amount of macrophyte/moss input} \\
 x_{total} * (a + t + m) =& (a * x_a + t * x_t + m * x_m)
 \end{align*}
 $$
 
-Task: define the normalization function (the evil plankton told me to do it)
+#### T1
+Task 1a: define the normalization function (the evil plankton told me to do it)
+Task 1b: use the normalization function in the calculate_proxy_error function
 
-```{r Simulate}
+```{r Write equations}
 #General normalization equation
 normalize <- function(x, y, z) {
   x / (x + y + z)
@@ -69,41 +74,61 @@ calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
 #Error for mass balance eqn
 calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m_error) {
   a_norm = normalize(a, t, m)
-  t_norm = normalize(t, a, m)
+  t_norm = normalize(t, m, a)
   m_norm = normalize(m, a, t)
   sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (m_norm * proxy_m_error) ^ 2 )
 }
+```
 
-# basic parameters
+## Define MC parameters
+
+###Import source data 
+
+From Florian et. al. (2015)
+
+```{r source data import, warning=FALSE}
+source_data = read.csv("data/qpt_sources_all.csv")
+source_data
+```
+####Q1 
+
+Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?
+A: Algal for C:N and d15N since it's so different. d13C is tougher to say.
+
+Q: How do the magnitudes of the errors compare across the proxies and accross the sources?
+A: Biggest for C:N, esp terrestrial.
+
+Q: What are the consequences of these uncertainties?
+A: They will introduce uncertainties in our ratios of a, t, and m.
+
+### Define params
+
+```{r}
 parameters <- 
   data_frame(
-    cn_a = 8.75,
+    cn_a = 8.8,
     cn_t = 48,
     cn_m = 31,
     d13c_a = -30.7,
     d13c_t = -26.9,
-    d13c_m = -22,
+    d13c_m = -21.8,
     d15n_a = 6.5,
     d15n_t = -1.6,
-    d15n_m = 0.8
+    d15n_m = 0.77
   )
 
 parameter_errors <- 
   data_frame(
-    cn_a = 0.25,
-    cn_t = 15,
-    cn_m = 4,
-    d13c_a = 0.2,
-    d13c_t = 0.6,
-    d13c_m = 1.5,
-    d15n_a = 0.2,
-    d15n_t = 1.8,
-    d15n_m = 0.5
+    cn_a = 0.4,
+    cn_t = 29,
+    cn_m = 4.6,
+    d13c_a = 0.28,
+    d13c_t = 1.21,
+    d13c_m = 1.55,
+    d15n_a = 0.42,
+    d15n_t = 3.6,
+    d15n_m = 0.47
   )
-
-# Testing these functions:
-# calculate_proxy(0.3, parameters$cn_a, 0.3, parameters$cn_t, 0.4, parameters$cn_m)
-# calculate_proxy_error(0.3, parameter_errors$cn_a, 0.3, parameter_errors$cn_t, 0.4, parameter_errors$cn_m)
 
 
 #Table of inputs
@@ -141,24 +166,15 @@ simulations <-
 simulations
 ```
 
-####Q1 
 
-Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?
-A: Algal for C:N and d15N since it's so different. d13C is tougher to say.
-
-Q: How do the magnitudes of the errors compare across the proxies and accross the sources?
-A: Biggest for C:N, esp terrestrial.
-
-Q: What are the consequences of these uncertainties?
-A: They will introduce uncertainties in our ratios of a, t, and m.
-
-
+## 2D plot of sim
 ```{r, warning=FALSE}
 simulations %>% 
   ggplot() +
   aes(cn, t_norm, color = a_norm) +
   geom_point()
 ```
+
 ####Q2
 Q: Did we simulate the space well enough?
 A: Probably. Definitely gaps that we could fill in, but get the overall picture.
@@ -195,8 +211,23 @@ A: The space of simulated possibilities.
 
 #Data
 
-Import my EA data
-```{r data import}
+Now we're going to work with some actual data that I obtained. The data come from a downcore lake sediment record of lake Qaupat (QPT) on southern Baffin Island, which we looked at on Tuesday. Here's a map:
+
+![](figures/Baffin_Lakes_Map.png)
+
+...and here's the previous work that's been done:
+
+```{r label, out.width = "85%", fig.cap = "caption"}
+include_graphics("figures/Betula.Salix.BSi.PCoA.GDGTs.pdf")
+```
+
+
+
+##Import EA data
+
+Now let's import the EA data that I got (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$). I threw in the BSi data from above as well for a comparison.
+
+```{r EA data import}
 qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
 qpt_data <-
   qpt_data %>%
@@ -207,14 +238,10 @@ qpt_data
 ```
 
 
-Import source data from Florian 2015
-```{r source data import}
-source_data = read.csv("qpt_sources.csv")
-source_data
-```
-
 
 ##Data plotted alone
+
+
 
 ```{r plot data alone}
 
@@ -261,6 +288,152 @@ A: Variation is controlled by d13C and C:N and not really by d15N.
 
 Q: Is there a clear age trend? What's your quick hypothesis as to what's causing it?
 A: Yes! Decreasing d13C and increasing C:N. Both suggest increasing terrestrial input.
+
+
+```{r 3D plot of data alone normalized}
+dataplot_norm <- 
+  plot_ly() %>% 
+  add_markers(qpt_data, x = qpt_data$C.N / mean(qpt_data$C.N), y = qpt_data$d13C / mean(qpt_data$d13C), z = qpt_data$d15N / mean(qpt_data$d15N), color = qpt_data$Age) %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = "delta13C"),
+                      zaxis = list(title = "delta15N")
+                      )) %>% 
+  colorbar(title = "Age")
+
+dataplot_norm
+```
+
+
+# Optimization
+
+This optimization test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+
+How do we know how good our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data.
+
+$$
+distance = \sqrt{(x_{model} - x_{real})^2 + (y_{model} - y_{real})^2 +(z_{model} - z_{real})^2}
+$$
+But being really far off in $\delta^{13}C$ isn't so bad because there's a lot of variation. Being 2 permille off for carbon is not nearly as bad as being 2 permille off for nitrogen.
+
+To deal with this, we'll also normalize these distances by their errors. It's a little hand-wavy, but should give us a better answer than no error consideration at all.
+
+$$
+\begin{align*}
+x =& \ \delta^{13}C \\
+y =& \ \delta^{15}C \\
+z =& \ C:N \\
+distance =& \sqrt{(x_{model} - x_{real})^2 / (SD_x)^2 + (y_{model} - y_{real})^2  / (SD_y)^2 +(z_{model} - z_{real})^2  / (SD_z)^2}
+\end{align*}
+$$
+
+
+
+##Optim function
+```{r Best fits}
+
+optim_function <- function(x, i) {
+  a <- x[1]
+  t <- x[2]
+  m <- x[3]
+  
+  #calculate proxies
+  dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
+  d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
+  d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
+  
+  #calculate errors
+  dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
+  d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
+  d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
+  
+  #calculate distance btwn test point and data
+  sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
+}
+
+#iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
+best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1, hessian = TRUE)
+best_fit2 <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "Nelder-Mead", hessian = TRUE)
+```
+
+##Optim performance test
+
+Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
+
+This might allow us to see some second-best fits, i.e. local minima.
+```{r Optimization space tiles}
+tiles <- expand.grid(
+  a = seq(0, 1, by = 0.1),
+  t = seq(0, 1, by = 0.1)
+) %>% 
+  mutate(
+    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y))) 
+    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
+  ) 
+
+
+tiles %>% 
+  ggplot() +
+  aes(a, t) +
+  geom_tile(mapping = aes(fill = log(optim_result))) +
+  geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
+```
+
+
+
+
+#Fit data
+
+Now we're going to take our real data and find the optimal values of a, t, and m. 
+
+```{r}
+qpt_data <- qpt_data %>% mutate(i = row_number())
+
+optim_results <- 
+  qpt_data %>% select(i) %>% 
+  group_by(i) %>%
+  do({
+    i <- .$i[1]
+    result <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+    data_frame(
+      a_optim = result$par[1] / sum(result$par), 
+      t_optim = result$par[2] / sum(result$par), 
+      m_optim = result$par[3] / sum(result$par), 
+      distance_optim = result$value
+    )
+  })
+
+qpt_data_optim <- 
+  left_join(qpt_data, optim_results, by = "i") %>% 
+  mutate(tot_optim = a_optim + t_optim + m_optim)
+qpt_data_optim
+```
+
+##Ternary diagrams
+
+A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
+qpt_data, mutate a column of the optimize function results
+B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
+C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
+
+```{r}
+qpt_data_optim_plot <- qpt_data_optim %>% 
+  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim, text = paste("Age:", Age))) +
+  theme_nomask() + 
+  geom_point() + 
+  scale_color_gradientn(colors = rainbow(3)) +
+  scale_size_continuous(range = c(10,1))
+
+qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
+
+```
+
+
+
+
+#MixSIAR
+
+
+
 
 
 ## Isospace
@@ -341,135 +514,6 @@ r2
 s2
 ```
 
-# Optimization
-
-This optimization test is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
-
-How do we know how good our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data.
-
-$$
-distance = \sqrt{(x_{model} - x_{real})^2 + (y_{model} - y_{real})^2 +(z_{model} - z_{real})^2}
-$$
-But being really far off in $\delta^{13}C$ isn't so bad because there's a lot of variation. Being 2 permille off for carbon is not nearly as bad as being 2 permille off for nitrogen.
-
-To deal with this, we'll also normalize these distances by their errors.
-
-$$
-\begin{align*}
-x =& \ \delta^{13}C \\
-y =& \ \delta^{15}C \\
-z =& \ C:N \\
-distance =& \sqrt{(x_{model} - x_{real})^2 / (SD_x)^2 + (y_{model} - y_{real})^2  / (SD_y)^2 +(z_{model} - z_{real})^2  / (SD_z)^2}
-\end{align*}
-$$
-##Optim function
-```{r Best fits}
-
-optim_function <- function(x, i) {
-  a <- x[1]
-  t <- x[2]
-  m <- x[3]
-  
-  #calculate proxies
-  dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
-  d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
-  d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
-  
-  #calculate errors
-  dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
-  d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
-  d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
-  
-  #calculate distance btwn test point and data
-  sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
-}
-
-#iterate over test points, starting at (0.3, 0.3, 0.4), and return lowest distance
-best_fit <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "L-BFGS-B", lower = 0, upper = 1, hessian = TRUE)
-best_fit2 <- optim(c(0.3, 0.3, 0.4), i = 3, optim_function, method = "Nelder-Mead", hessian = TRUE)
-
-
-# best_fit <- optim(c(0.3, 0.3), i = 2, optim_function, method = "BFGS")
-# best_fit
-
-```
-
-##Optim performance test
-
-Now lets make a plot of a vs. t, calculate how well each (a,t) fits data point i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
-
-This might allow us to see some second-best fits, i.e. local minima.
-```{r Optimization space tiles}
-tiles <- expand.grid(
-  a = seq(0, 1, by = 0.1),
-  t = seq(0, 1, by = 0.1)
-) %>% 
-  mutate(
-    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y))) 
-    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
-  ) 
-
-
-tiles %>% 
-  ggplot() +
-  aes(a, t) +
-  geom_tile(mapping = aes(fill = log(optim_result))) +
-  geom_point(data = data_frame(a = best_fit$par[1], t = best_fit$par[2]), color = "red")
-```
-
-
-
-
-#Fit data
-
-Now we're going to take our real data and find the optimal values of a, t, and m. 
-
-```{r}
-qpt_data <- qpt_data %>% mutate(i = row_number())
-
-optim_results <- 
-  qpt_data %>% select(i) %>% 
-  group_by(i) %>%
-  do({
-    i <- .$i[1]
-    result <- optim(c(0.33, 0.33, 0.34), i = i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
-    data_frame(
-      a_optim = result$par[1] / sum(result$par), 
-      t_optim = result$par[2] / sum(result$par), 
-      m_optim = result$par[3] / sum(result$par), 
-      distance_optim = result$value
-    )
-  })
-
-qpt_data_optim <- 
-  left_join(qpt_data, optim_results, by = "i") %>% 
-  mutate(tot_optim = a_optim + t_optim + m_optim)
-qpt_data_optim
-```
-
-##Ternary diagrams
-
-A. A ternary diagram just like seb's example, i.e. tiles colored by the goodness of fit for one data point with that data point displayed. a, t, m (norm) as the axes. For this we need a data table containing:
-qpt_data, mutate a column of the optimize function results
-B. A ternary diagram with a, t, m (norm) as the axes, all data points plotted and colored by their "best_fit" value.
-C. Same axes, all data points plotted, colored by their age, optionally inversely sized by the best_fit value
-
-```{r}
-qpt_data_optim_plot <- qpt_data_optim %>% 
-  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim, text = paste("Age:", Age))) +
-  theme_nomask() + 
-  geom_point() + 
-  scale_color_gradientn(colors = rainbow(3)) +
-  scale_size_continuous(range = c(10,1))
-
-qpt_data_optim_plot #<- ggplotly(qpt_data_optim_plot)
-
-```
-
-
-
-
-#MixSIAR
 
 ## Import results
 
