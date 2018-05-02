@@ -285,7 +285,31 @@ isospace <-
 isospace
 ```
 
+```{r d13C and CN isospace}
+#source_data_cn <- read.csv("data/qpt_sources_cn.csv")
 
+isospace_cn <- 
+  ggplot() + 
+  geom_point(data = qpt_data, aes(x = d13C, y = C.N, color = Age)) + 
+  #geom_path(data = qpt_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
+  geom_point(data = source_data_cn, aes(x = Meand13C, y = MeanCN), color = "black") + 
+  geom_errorbar(data = source_data_cn, aes(
+    x = Meand13C, y = MeanCN, ymin = MeanCN - SDCN, ymax = MeanCN + SDCN)) +
+  geom_errorbarh(data = source_data_cn, aes(
+    x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+  geom_text(data = source_data_cn, aes(x = Meand13C, y = MeanCN, label = X, hjust = -0.5, vjust = 2)) +
+  labs(
+    title = "Lake QPT Isospace", 
+    color = "Age (yrs)", 
+    x = latex2exp::TeX("$\\delta^{13}C$"), 
+    y = latex2exp::TeX("$\\C:N$"))
+
+#grid.arrange(isospace, isospace_cn, nrow = 1)
+
+isospace
+isospace_cn
+```
 
 ```{r 3D plots of data and model}
 q2 <- 
