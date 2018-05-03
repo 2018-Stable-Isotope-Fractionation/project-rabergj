@@ -434,7 +434,7 @@ qpt_data_optim_plot <- qpt_data_optim %>%
   ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim)) +
   theme_nomask() + 
   geom_point() + 
-  scale_color_gradientn(colors = rainbow(3)) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
   scale_size_continuous(range = c(10,1))
 
 qpt_data_optim_plot
@@ -541,7 +541,16 @@ A: There's a lot of hidden uncertainty... know your model and assess it!! Overal
 
 #MixSIAR
 
+MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. It's going to take us from our data to our a, t, m space in a different way.
+
+![](figures/Bayesian.png)
+
 ## Isospace
+
+
+First, we'll make a plot analogous to the one in the man-eating lions paper (Yeakel et. al., 2009):
+
+![](figures/Lions.png)
 
 ```{r, warning=FALSE}
 isospace <- 
@@ -563,7 +572,13 @@ isospace <-
 isospace
 ```
 
-```{r d13C and CN isospace}
+#### Q9
+Q: The model didn't really work. Why might that be?
+A: A few reasons. Some points are outside the source space, as discussed previously. Here we can really see that the $\delta^{15}N$ is barely changing compared to the $\delta^{15}N$. This, in combination with the large error bars, is probably what's throwing the model off the most.
+
+Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if that still looks true on an isoscape:
+
+```{r d13C and CN isospace, warning=FALSE}
 #source_data_cn <- read.csv("data/qpt_sources_cn.csv")
 
 isospace_cn <- 
@@ -571,12 +586,12 @@ isospace_cn <-
   geom_point(data = qpt_data, aes(x = d13C, y = C.N, color = Age)) + 
   #geom_path(data = qpt_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
-  geom_point(data = source_data_cn, aes(x = Meand13C, y = MeanCN), color = "black") + 
-  geom_errorbar(data = source_data_cn, aes(
+  geom_point(data = source_data, aes(x = Meand13C, y = MeanCN), color = "black") + 
+  geom_errorbar(data = source_data, aes(
     x = Meand13C, y = MeanCN, ymin = MeanCN - SDCN, ymax = MeanCN + SDCN)) +
-  geom_errorbarh(data = source_data_cn, aes(
+  geom_errorbarh(data = source_data, aes(
     x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
-  geom_text(data = source_data_cn, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
     title = "Lake QPT Isospace", 
     color = "Age (yrs)", 
@@ -585,6 +600,17 @@ isospace_cn <-
 
 isospace_cn
 ```
+
+#### Q10
+Q: Does this look better? Think we'd get a good model output?
+A: Not really... the spacing of the sources, along with their error bars, is really what sets the scale there. The C:N changes looked big before, but on the scale that we care about, they aren't so significant.
+
+# Conclusions
+* Know your model! And know how to assess how well it's doing. People often say a stupid model will give you a stupid result, but really the standard should be to make smart models that give smart results!
+* Mixing models don't always work. You really need to have *all* of your sources, and they need to be well defined with as little standard deviation as possible.
+* Mixing models have an extra problem in paleo work - if the proxy you're measuring might be affected by decomposition/diagenesis, you'd need to correct for that, which is likely hard to do.
+* Assuming that the proxy *trends* are observed, even if the magnitudes change, qualitative interpretations may be the best.
+
 
 
 ## Import results
@@ -686,6 +712,26 @@ plot_p_fac1_all <- grid.arrange(plot_p_fac1_1_nosoil, plot_p_fac1_2_nosoil, plot
 
 # v1 = moss, v2 = plankton, v3 = soil, v4 = terrestrial
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
