@@ -65,7 +65,9 @@ Task 1b: use the normalization function in the calculate_proxy_error function
 
 ```{r Write equations}
 #General normalization equation
-normalize <- function() {} #Write this function!
+normalize <- function(x, y, z) {
+  x / (x + y + z)
+} #Write this function!
 
 #General mass balance equation
 calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
@@ -74,9 +76,9 @@ calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
 
 #Error for mass balance eqn
 calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m_error) {
-  a_norm = ?
-  t_norm = ?
-  m_norm = ?
+  a_norm = normalize(a, t, m)
+  t_norm = normalize(t, a, m)
+  m_norm = normalize(m, t, a)
   sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (m_norm * proxy_m_error) ^ 2 )
 }
 ```
@@ -142,9 +144,9 @@ Task: Pick values for a, t, and m to model
 #Table of input scenarios
 input_scenarios <- 
   expand.grid(
-    a = ?,
-    t = ?,
-    m = ?
+    a = seq(0, 100, 10),
+    t = seq(0, 100, 10),
+    m = seq(0, 100, 10)
   ) %>% 
   merge(parameters) %>% 
   tbl_df()
@@ -223,6 +225,11 @@ A:
 # Data
 
 Now we're going to work with some actual data that I obtained. The data come from a downcore lake sediment record of lake Qaupat (QPT) on southern Baffin Island, which we looked at on Tuesday. Here's a map:
+
+```{r, out.width = "60%"}
+knitr::include_graphics("figures/Baffin_Lakes_Map.png")
+```
+
 
 ![](figures/Baffin_Lakes_Map.png)
 
@@ -466,7 +473,7 @@ Now we have some results, but we already suspect that some of the fits we got fr
 Task: Let's see how this works for data points i = 3, 15, and 20 (and 5 if there's time)
 
 ```{r}
-best_fit_i = 3
+best_fit_i = 20
 best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
 #best_fit
 
