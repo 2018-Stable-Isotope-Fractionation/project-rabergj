@@ -1,5 +1,6 @@
 ---
-title: "Paleoecology"
+title: "Paleoecology of Baffin Island"
+subtitle: "Stable Isotope Analysis of Lake Sediments"
 author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -13,22 +14,24 @@ editor_options:
   chunk_output_type: inline
 ---
 
-#Load Libraries
+Load Libraries
 
 ```{r "load packages", include=FALSE}
 library(tidyverse)
 library(plotly)
 library(stats)
-library(FactoMineR)
 library(ggtern)
 library(latex2exp)
 library(knitr)
 ```
 
-#Background
+# Background/Refresher
 
-
-
+* We're interested in figuring out what the plants are going to do as the Arctic warms.
+* The past is the key to the future - look at Holocene lake sediments.
+* Sarah Crump's pilot study from Lake Qaupat show a shift from an aquatic to a terrestrial ecosystem ~6ka. 
+* I ran Elemental Analysis on the core to see if the isotopes told the same story.
+* Here, we're building a model to see if our story is plausible and/or if any new insights arise.
 
 # Monte Carlo Simulation
 
@@ -56,15 +59,13 @@ x_{total} * (a + t + m) =& (a * x_a + t * x_t + m * x_m)
 \end{align*}
 $$
 
-#### T1
+#### Task 1
 Task 1a: define the normalization function (the evil plankton told me to do it)
 Task 1b: use the normalization function in the calculate_proxy_error function
 
 ```{r Write equations}
 #General normalization equation
-normalize <- function(x, y, z) {
-  x / (x + y + z)
-}
+normalize <- function() {} #Write this function!
 
 #General mass balance equation
 calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
@@ -73,16 +74,16 @@ calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
 
 #Error for mass balance eqn
 calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m_error) {
-  a_norm = normalize(a, t, m)
-  t_norm = normalize(t, m, a)
-  m_norm = normalize(m, a, t)
+  a_norm = ?
+  t_norm = ?
+  m_norm = ?
   sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (m_norm * proxy_m_error) ^ 2 )
 }
 ```
 
 ## Define MC parameters
 
-###Import source data 
+### Import source data 
 
 From Florian et. al. (2015)
 
@@ -90,20 +91,21 @@ From Florian et. al. (2015)
 source_data = read.csv("data/qpt_sources_all.csv")
 source_data
 ```
-####Q1 
+#### Question 1
 
 Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?  
-A: Algal for C:N and d15N since it's so different. d13C is tougher to say.
+A:
 
 Q: How do the magnitudes of the errors compare across the proxies and accross the sources?  
-A: Biggest for C:N, esp terrestrial.
+A: 
 
 Q: What are the consequences of these uncertainties?  
-A: They will introduce uncertainties in our ratios of a, t, and m.
+A: 
 
-### Define params
+### Define parameters
 
 ```{r}
+#source parameters
 parameters <- 
   data_frame(
     cn_a = 8.8,
@@ -130,18 +132,24 @@ parameter_errors <-
     d15n_m = 0.47
   )
 
+```
 
-#Table of inputs
+#### Task 2
+Task: Pick values for a, t, and m to model
+
+```{r}
+
+#Table of input scenarios
 input_scenarios <- 
   expand.grid(
-    a = seq(0, 100, 10),
-    t = seq(0, 100, 10),
-    m = seq(0, 100, 10)
+    a = ?,
+    t = ?,
+    m = ?
   ) %>% 
   merge(parameters) %>% 
   tbl_df()
 
-
+#calculate expected proxy values given input scenarios
 simulations <- 
   input_scenarios %>% 
   merge(data_frame(i = 1:5)) %>% 
@@ -167,7 +175,8 @@ simulations
 ```
 
 
-## 2D plot of sim
+## 2D plot of simulations
+
 ```{r, warning=FALSE}
 simulations %>% 
   ggplot() +
@@ -175,12 +184,12 @@ simulations %>%
   geom_point()
 ```
 
-####Q2
+#### Question 2
 Q: Did we simulate the space well enough?  
-A: Probably. Definitely gaps that we could fill in, but get the overall picture.
+A:
 
 
-##3D plots of sim
+##3D plots of simulation
 
 ```{r 3D Plots, warning=FALSE}
 q <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
@@ -204,12 +213,14 @@ q
 r
 s
 ```
-###Q3
+### Question 3
 Q: What are we looking at here?  
-A: The space of simulated possibilities.
+A: 
 
+Q: Why does it taper off when it gets yellow?  
+A:
 
-#Data
+# Data
 
 Now we're going to work with some actual data that I obtained. The data come from a downcore lake sediment record of lake Qaupat (QPT) on southern Baffin Island, which we looked at on Tuesday. Here's a map:
 
@@ -220,12 +231,12 @@ Now we're going to work with some actual data that I obtained. The data come fro
 ![](figures/Betula.Salix.BSi.PCoA.GDGTs.png)
 
 
-##Import EA data
+## Import EA data
 
-Now let's import the EA data that I got (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$). I threw in the BSi data from above as well for a comparison.
+Now let's import the EA data (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$). I threw in the BSi data from above as well for a comparison.
 
 ```{r EA data import}
-qpt_data = read.csv("QPT16_2A_EA_results_no_outliers.csv")
+qpt_data = read.csv("data/QPT16_2A_EA_results_no_outliers.csv")
 qpt_data <-
   qpt_data %>%
   mutate("d15N" = d15N - 25, #This is a relic of the data processing, should fix elsewhere
@@ -236,7 +247,7 @@ qpt_data
 
 
 
-##Data plotted alone
+## Data plotted alone
 
 ```{r plot data alone}
 
@@ -245,7 +256,6 @@ qpt_data_plot <-
   gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
   ggplot() +
   aes(Age, val, group = var) +
-  #geom_smooth(method = "lm", color = "red") +
   geom_smooth(method = "loess", span = 0.2) +
   geom_point() +
   facet_grid(var~., scales = "free_y", switch = "y") +
@@ -257,14 +267,15 @@ qpt_data_plot <-
 qpt_data_plot
 ```
 
-####Q4
+#### Question 4
 Q: Does the EA data align with the BSi? What's the same and what's different?  
-A: Kind of... The overall pattern of things happening until ~5ka, followed by a stable period until ~ 1ka, and finally some changes up until the present seems to hold, but the trends are not as simple as they are for BSi.
+A: 
 
 
-##3D plots
+## 3D plots
 
 ### Data alone
+
 ```{r 3D plot of data alone}
 dataplot <- 
   plot_ly() %>% 
@@ -278,16 +289,16 @@ dataplot <-
 dataplot
 ```
 
-####Q5
+#### Question 5
 Q: Which variables explain most of the changes? Which explains the least?  
-A: Variation is controlled by d13C and C:N and not really by d15N.
+A: 
 
 Q: Is there a clear age trend? What's your quick hypothesis as to what's causing it?  
-A: Yes! Decreasing d13C and increasing C:N. Both suggest increasing terrestrial input.
+A: 
 
 
 
-### Data and Simulation Space
+### Data and Simulation Space Combined
 
 Now let's pot our data onto our simulation space and see what we find.
 
@@ -321,12 +332,12 @@ r2
 s2
 ```
 
-#### Q6
+#### Question 6
 Q: Do the data fall within the simulation space?  
-A: No, only the modern fall into the simulation space.
+A: 
 
 Q: If no, why might that be the case?  
-A: Perhaps we're missing a crucial source. Perhaps our measured sources at Chris' lake aren't the same as at QPT (his is less vegetated). Perhaps there's an unaccounted for fractionation (or preferential metabolism for C:N) between the source and when we take the core.
+A: 
 
 
 
@@ -357,7 +368,7 @@ $$
 
 
 
-##Optim function
+## Optim function
 
 Here we'll define our optimization function. It takes a give combination of sources (c(a, t, m)) and a real piece of data (with index = i) and spits out the distance between the value predicted by the sources and the real value.
 
@@ -392,7 +403,7 @@ best_fit
 
 
 
-##Fit data
+## Fit data
 
 Now we're going to take our full data set and find the optimal values of a, t, and m. 
 
@@ -438,12 +449,12 @@ qpt_data_optim_plot
 
 ```
 
-#### Q7
+#### Question 7
 Q: Was our model able to fit the points well? Any points that look suspect?  
-A: Some points appear to be fit pretty well, i.e. they're sitting somewhere in the middle of the plot, but many points are right up against the wall.
+A: 
 
 Q: Do the suspect points make sense? Think back to the 3D plots from earlier.  
-A: Yes; most of the points against the wall have old ages. These were the ones that fell out of our "cloud", aka our simulation space.
+A: 
 
 
 ## Assess fits
@@ -451,13 +462,13 @@ A: Yes; most of the points against the wall have old ages. These were the ones t
 Now we have some results, but we already suspect that some of the fits we got from our model might not be so great. Let's analyze how good these fits are.
 
 
-#### T2
+#### Task 3
 Task: Let's see how this works for data points i = 3, 15, and 20 (and 5 if there's time)
 
 ```{r}
-best_fit_i = 20
+best_fit_i = 3
 best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
-best_fit
+#best_fit
 
 best_fit_a = best_fit$par[1] / sum(best_fit$par)
 best_fit_t = best_fit$par[2] / sum(best_fit$par)
@@ -469,30 +480,13 @@ This is useful, but it's still just spitting out a number. It doesn't really giv
 
 ### Tile plot
 
-Now let's make a plot of a vs. t, calculate how well each (a,t) fits data point i (for the optimized m), and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
+Now let's make a ternary plot for (a, t, m), calculate how well each (a, t, m) fits sample i, and display the result as a tile weighted by the goodness of fit (0 = perfect). We'll also plot our result from "best_fit", which should show up at the optimal point.
 
-This will allow us to see how much wiggle room we have with our fit. It might even allow us to see some second-best fits, i.e. local minima.
+This will allow us to see the gradient of our optim function, i.e. how much wiggle room we have with our fit. It might even allow us to see some second-best fits, i.e. local minima.
 
-```{r Optimization space tiles}
-tiles <- expand.grid(
-  a = seq(0, 1, by = 0.01),
-  t = seq(0, 1, by = 0.01)
-) %>% 
-  mutate(
-    optim_result = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_m), best_fit_i)) 
-    #takes normalized a and t and plugs them into optim_function as a vector, return a <dbl> (number)
-  ) 
+#### Task 4
 
-
-tiles %>% 
-  ggplot() +
-  aes(a, t) +
-  geom_tile(mapping = aes(fill = log(optim_result))) +
-  geom_point(data = data_frame(a = best_fit_a, t = best_fit_t), color = "red")
-```
-
-
-###Ternary tile plot
+Change the resolution of our plot by playing with the number of bins.
 
 ```{r, warning=FALSE}
 expand.grid(
@@ -510,7 +504,7 @@ expand.grid(
   filter(!is.na(value), !is.nan(value)) %>% 
   ggtern(aes(a,t,m)) +
   # calculate mean estimate in each bin
-  geom_tri_tern(bins = 20, mapping = aes(fill=..stat..,value=value), fun = mean) +
+  geom_tri_tern(bins = 5, mapping = aes(fill=..stat..,value=value), fun = mean) +
   # mark minimum
   geom_point(data = qpt_data_optim, aes(
     x = qpt_data_optim$a_optim[best_fit_i], 
@@ -520,30 +514,27 @@ expand.grid(
 ```
 
 
-#### Q8
+#### Question 8
 Q: What did you learn about the goodness of our fits?  
-A: Some fits (i = 3) really sit in a well. Others are much broader, i.e. we could drastically change a, t, or m and not increase our distance too much.
+A: 
 
 Q: Did it look like all of the points had a global minimum on our simulation space?  
-A: No. i = 20 is up against the wall.
+A: 
 
 Q: What conclusions can you draw? How well did this model work?  
-A: There's a lot of hidden uncertainty... know your model and assess it!! Overall, the model did alright, but a lot of points fall out of the simulation space.
+A: 
 
 
 
+# MixSIAR
 
+Outside of this file, I also played a lot with a mixing model called MixSIAR. We'll discuss it briefly.
 
-
-
-#MixSIAR
-
-MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. It's going to take us from our data to our a, t, m space in a different way.
+MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. Like the simulation we just did, it's going to take us from our data to our a, t, m space, but in a more mathematically refined way.
 
 ![](figures/Bayesian.png)
 
 ## Isospace
-
 
 First, we'll make a plot analogous to the one in the man-eating lions paper (Yeakel et. al., 2009):
 
@@ -569,9 +560,9 @@ isospace <-
 isospace
 ```
 
-#### Q9
-Q: The model didn't really work. Why might that be?  
-A: A few reasons. Some points are outside the source space, as discussed previously. Here we can really see that the $\delta^{15}N$ is barely changing compared to the $\delta^{15}N$. This, in combination with the large error bars, is probably what's throwing the model off the most.
+#### Question 9
+Q: Spoiler alert: the model didn't really work out. Why might that be?  
+A:
 
 Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if that still looks true on an isoscape:
 
@@ -598,13 +589,13 @@ isospace_cn <-
 isospace_cn
 ```
 
-#### Q10
-Q: Does this look better? Think we'd get a good model output?  
-A: Not really... the spacing of the sources, along with their error bars, is really what sets the scale there. The C:N changes looked big before, but on the scale that we care about, they aren't so significant.
+#### Question 10
+Q: Does this look better? Think we'd get a good model output from this?  
+A:
 
 # Conclusions
-* Know your model! And know how to assess how well it's doing. People often say a stupid model will give you a stupid result, but really the standard should be to make smart models that give smart results!
+* Know your model! And know how to assess how well it's doing. People often say a stupid model will give you a stupid result, but a meh model that gives meh results isn't really useful either. Strive to make smart models that give smart results!
 * Mixing models don't always work. You really need to have *all* of your sources, and they need to be well defined with as little standard deviation as possible.
 * Mixing models have an extra problem in paleo work - if the proxy you're measuring might be affected by decomposition/diagenesis, you'd need to correct for that, which is likely hard to do.
-* Assuming that the proxy *trends* are observed, even if the magnitudes change, qualitative interpretations may be the best.
+* Assuming that the proxy *trends* are real, even if the magnitudes change, a well-informed qualitative interpretation may sometimes be the best tool in a paleoecologist's toolbox.
 
