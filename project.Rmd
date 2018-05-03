@@ -92,13 +92,13 @@ source_data
 ```
 ####Q1 
 
-Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?
+Q: Which source should have the biggest (or most unique) affect on C:N? d13C? d15N?  
 A: Algal for C:N and d15N since it's so different. d13C is tougher to say.
 
-Q: How do the magnitudes of the errors compare across the proxies and accross the sources?
+Q: How do the magnitudes of the errors compare across the proxies and accross the sources?  
 A: Biggest for C:N, esp terrestrial.
 
-Q: What are the consequences of these uncertainties?
+Q: What are the consequences of these uncertainties?  
 A: They will introduce uncertainties in our ratios of a, t, and m.
 
 ### Define params
@@ -176,7 +176,7 @@ simulations %>%
 ```
 
 ####Q2
-Q: Did we simulate the space well enough?
+Q: Did we simulate the space well enough?  
 A: Probably. Definitely gaps that we could fill in, but get the overall picture.
 
 
@@ -205,7 +205,7 @@ r
 s
 ```
 ###Q3
-Q: What are we looking at here?
+Q: What are we looking at here?  
 A: The space of simulated possibilities.
 
 
@@ -217,10 +217,7 @@ Now we're going to work with some actual data that I obtained. The data come fro
 
 ...and here's the previous work that's been done:
 
-```{r label, out.width = "85%", fig.cap = "caption"}
-include_graphics("figures/Betula.Salix.BSi.PCoA.GDGTs.pdf")
-```
-
+![](figures/Betula.Salix.BSi.PCoA.GDGTs.png)
 
 
 ##Import EA data
@@ -261,7 +258,7 @@ qpt_data_plot
 ```
 
 ####Q4
-Q: Does the EA data align with the BSi? What's the same and what's different?
+Q: Does the EA data align with the BSi? What's the same and what's different?  
 A: Kind of... The overall pattern of things happening until ~5ka, followed by a stable period until ~ 1ka, and finally some changes up until the present seems to hold, but the trends are not as simple as they are for BSi.
 
 
@@ -282,10 +279,10 @@ dataplot
 ```
 
 ####Q5
-Q: Which variables explain most of the changes? Which explains the least?
+Q: Which variables explain most of the changes? Which explains the least?  
 A: Variation is controlled by d13C and C:N and not really by d15N.
 
-Q: Is there a clear age trend? What's your quick hypothesis as to what's causing it?
+Q: Is there a clear age trend? What's your quick hypothesis as to what's causing it?  
 A: Yes! Decreasing d13C and increasing C:N. Both suggest increasing terrestrial input.
 
 
@@ -325,10 +322,10 @@ s2
 ```
 
 #### Q6
-Q: Do the data fall within the simulation space?
+Q: Do the data fall within the simulation space?  
 A: No, only the modern fall into the simulation space.
 
-Q: If no, why might that be the case?
+Q: If no, why might that be the case?  
 A: Perhaps we're missing a crucial source. Perhaps our measured sources at Chris' lake aren't the same as at QPT (his is less vegetated). Perhaps there's an unaccounted for fractionation (or preferential metabolism for C:N) between the source and when we take the core.
 
 
@@ -442,10 +439,10 @@ qpt_data_optim_plot
 ```
 
 #### Q7
-Q: Was our model able to fit the points well? Any points that look suspect?
+Q: Was our model able to fit the points well? Any points that look suspect?  
 A: Some points appear to be fit pretty well, i.e. they're sitting somewhere in the middle of the plot, but many points are right up against the wall.
 
-Q: Do the suspect points make sense? Think back to the 3D plots from earlier.
+Q: Do the suspect points make sense? Think back to the 3D plots from earlier.  
 A: Yes; most of the points against the wall have old ages. These were the ones that fell out of our "cloud", aka our simulation space.
 
 
@@ -524,13 +521,13 @@ expand.grid(
 
 
 #### Q8
-Q: What did you learn about the goodness of our fits?
+Q: What did you learn about the goodness of our fits?  
 A: Some fits (i = 3) really sit in a well. Others are much broader, i.e. we could drastically change a, t, or m and not increase our distance too much.
 
-Q: Did it look like all of the points had a global minimum on our simulation space?
+Q: Did it look like all of the points had a global minimum on our simulation space?  
 A: No. i = 20 is up against the wall.
 
-Q: What conclusions can you draw? How well did this model work?
+Q: What conclusions can you draw? How well did this model work?  
 A: There's a lot of hidden uncertainty... know your model and assess it!! Overall, the model did alright, but a lot of points fall out of the simulation space.
 
 
@@ -573,7 +570,7 @@ isospace
 ```
 
 #### Q9
-Q: The model didn't really work. Why might that be?
+Q: The model didn't really work. Why might that be?  
 A: A few reasons. Some points are outside the source space, as discussed previously. Here we can really see that the $\delta^{15}N$ is barely changing compared to the $\delta^{15}N$. This, in combination with the large error bars, is probably what's throwing the model off the most.
 
 Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if that still looks true on an isoscape:
@@ -602,7 +599,7 @@ isospace_cn
 ```
 
 #### Q10
-Q: Does this look better? Think we'd get a good model output?
+Q: Does this look better? Think we'd get a good model output?  
 A: Not really... the spacing of the sources, along with their error bars, is really what sets the scale there. The C:N changes looked big before, but on the scale that we care about, they aren't so significant.
 
 # Conclusions
