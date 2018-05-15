@@ -1,6 +1,6 @@
 ---
-title: "Stable Isotope Analysis of Iceland Lake Sediments"
-subtitle: "Lake **HVT**"
+title: "Vestra Gíslholtsvatn"
+subtitle: "Stable Isotope Analysis of Iceland Lake Sediments"
 author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -13,8 +13,6 @@ output:
 editor_options:
   chunk_output_type: inline
 ---
-
-Load Libraries
 
 ```{r "load packages", include=FALSE}
 library(tidyverse)
@@ -207,9 +205,9 @@ Now let's import the EA data (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$).
 
 
 ```{r EA data import}
-lake_name <- "HVT"
+lake_name <- "VGHV"
 
-lake_data = read.csv("data/hvt.csv")
+lake_data = read.csv("data/vghv.csv")
 lake_data <-
   lake_data %>%
   mutate("Age" = parse_number(Age),
@@ -226,16 +224,16 @@ lake_data
 
 lake_data_plot <- 
   lake_data %>%
-  gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
+  gather(var, val, c("d13C", "d15N", "C.N")) %>% 
   ggplot() +
   aes(Age, val, group = var) +
   geom_smooth(method = "loess", span = 0.2) +
   geom_point() +
-  facet_grid(var~., scales = "free_y", switch = "y") +
+  facet_grid(var~.,scales = "free_y", switch = "y") +
   scale_x_reverse(expand = c(0,500)) + 
   scale_y_continuous(name = "") +
   xlab("Age (years)") +
-  labs(title = paste("Lake ", lake_name))
+  labs(title = paste("Lake", lake_name))
 
 lake_data_plot
 ```
@@ -254,7 +252,7 @@ dataplot <-
                       yaxis = list(title = "delta13C"),
                       zaxis = list(title = "delta15N")
                       ),
-         title = paste("Lake ", lake_name)) %>% 
+         title = paste("Lake", lake_name)) %>% 
   colorbar(title = "Age")
 
 dataplot
@@ -272,7 +270,7 @@ q2 <-
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
-         title = paste(lake_name, " Data in Simulation Space")) %>% 
+         title = paste(lake_name, "Data in Simulation Space")) %>% 
   colorbar(title = "Aquatic input")
 
 r2 <- 
@@ -282,7 +280,7 @@ r2 <-
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
-         title = paste(lake_name, " Data in Simulation Space")) %>% 
+         title = paste(lake_name, "Data in Simulation Space")) %>% 
   colorbar(title = "Terrestrial input")
 
 s2 <- 
@@ -292,7 +290,7 @@ s2 <-
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
-         title = paste(lake_name, " Data in Simulation Space")) %>% 
+         title = paste(lake_name, "Data in Simulation Space")) %>% 
   colorbar(title = "Soil input")
 
 q2
@@ -317,7 +315,7 @@ isospace <-
     x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
   geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
-    title = paste("Lake", lake_name, "Isospace", sep = " "), 
+    title = paste("Lake", lake_name, "Isospace"), 
     color = "Age (yrs)", 
     x = latex2exp::TeX("$\\delta^{13}C$"), 
     y = latex2exp::TeX("$\\delta^{15}N$"))
@@ -341,7 +339,7 @@ isospace_cn <-
     x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
   geom_text(data = source_data, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
-    title = paste("Lake", lake_name, "Isospace with C:N", sep = " "), 
+    title = paste("Lake", lake_name, "Isospace with C:N"), 
     color = "Age (yrs)", 
     x = latex2exp::TeX("$\\delta^{13}C$"), 
     y = latex2exp::TeX("$\\C:N$"))
@@ -465,7 +463,7 @@ lake_data_optim_plot <- lake_data_optim %>%
   ggtern(aes(a_optim, t_optim, s_optim, color = Age, size = distance_optim)) +
   labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
        x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
-       title = paste("Lake ", lake_name),
+       title = paste("Lake", lake_name),
        size = "Distance of fit") +
   theme_showarrows() +
   theme_nomask() + 
@@ -522,7 +520,7 @@ expand.grid(
   ggtern(aes(a,t,s)) +
   labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
        x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
-       title = paste("Lake ", lake_name),
+       title = paste("Lake", lake_name),
        fill = "Distance of fit") +
   theme_showarrows() +
   theme_nomask() +
