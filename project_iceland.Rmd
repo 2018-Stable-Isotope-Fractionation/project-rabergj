@@ -1,6 +1,6 @@
 ---
-title: "Paleoecology of Iceland"
-subtitle: "Stable Isotope Analysis of Lake Sediments"
+title: "Stable Isotope Analysis of Iceland Lake Sediments"
+subtitle: "Lake **HVT**"
 author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -30,8 +30,8 @@ library(knitr)
 * Here, I'm building two mixing models attempt to trace C:N, $\delta^{13}C$, and $\delta^{15}N$ values measured in Holocene lake sediments to their sources within the lake catchment.
 * This .rmd file should take source data and sediment data and spit out various plots
 * To work on:
-** An error analysis that uses gradients
-** How to represent the data when there are more than 3 sources --> use that filled line plot that seb whipped up.
+  + An error analysis that uses gradients
+  + How to represent the data when there are more than 3 sources --> use that filled line plot that seb whipped up.
 
 # Monte Carlo Simulation
 
@@ -45,10 +45,10 @@ Mass balance equation:
 $$
 \begin{align*}
 x =& \ \textrm{proxy} \ (\delta^{13}C, \ \delta^{15}N, \ or \ C\!:\!N) \\
-a =& \ \textrm{amount of algal input} \\
+a =& \ \textrm{amount of aquatic input} \\
 t =& \ \textrm{amount of terrestrial plant input} \\
-m =& \ \textrm{amount of macrophyte/moss input} \\
-x_{total} * (a + t + m) =& (a * x_a + t * x_t + m * x_m)
+s =& \ \textrm{amount of soil input} \\
+x_{total} * (a + t + s) =& (a * x_a + t * x_t + s * x_s)
 \end{align*}
 $$
 #### Task
@@ -95,9 +95,6 @@ soil <- source_data %>%
 ```
 
 ### Define parameters
-
-####Task
-Automate this.
 
 ```{r}
 #source parameters
@@ -171,27 +168,31 @@ simulations
 
 ##3D plots of simulation
 
-####Task
-Expand this to more sources --> just more plots? Or a better way? Not really necessary...
-
 ```{r 3D Plots, warning=FALSE}
 a_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = "Simulation Space") %>% 
+  colorbar(title = "Aquatic input")
 
 t_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = "Simulation Space") %>% 
+  colorbar(title = "Terrestrial input")
 
 s_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~s_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = "Simulation Space") %>% 
+  colorbar(title = "Soil input")
+
 a_sim_plot
 t_sim_plot
 s_sim_plot
@@ -206,7 +207,9 @@ Now let's import the EA data (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$).
 
 
 ```{r EA data import}
-lake_data = read.csv("data/arn.csv")
+lake_name <- "HVT"
+
+lake_data = read.csv("data/hvt.csv")
 lake_data <-
   lake_data %>%
   mutate("Age" = parse_number(Age),
@@ -232,10 +235,11 @@ lake_data_plot <-
   scale_x_reverse(expand = c(0,500)) + 
   scale_y_continuous(name = "") +
   xlab("Age (years)") +
-  labs(title = "Lake ARN")
+  labs(title = paste("Lake ", lake_name))
 
 lake_data_plot
 ```
+
 
 
 ## 3D plots
@@ -249,7 +253,8 @@ dataplot <-
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = "delta13C"),
                       zaxis = list(title = "delta15N")
-                      )) %>% 
+                      ),
+         title = paste("Lake ", lake_name)) %>% 
   colorbar(title = "Age")
 
 dataplot
@@ -259,9 +264,6 @@ dataplot
 
 ### Data and Simulation Space Combined
 
-#### Task
-Either extend this to all inputs like above, or just do one representative one. Probably the latter.
-
 ```{r 3D plots of data and model, warning=FALSE}
 q2 <- 
   plot_ly() %>% 
@@ -269,7 +271,9 @@ q2 <-
   add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = paste(lake_name, " Data in Simulation Space")) %>% 
+  colorbar(title = "Aquatic input")
 
 r2 <- 
   plot_ly() %>% 
@@ -277,27 +281,79 @@ r2 <-
   add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>%
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = paste(lake_name, " Data in Simulation Space")) %>% 
+  colorbar(title = "Terrestrial input")
 
 s2 <- 
   plot_ly() %>% 
-  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
+  add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$s_norm, opacity = 0.3) %>% 
   add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
-                      zaxis = list(title = 'delta15N')))
+                      zaxis = list(title = 'delta15N')),
+         title = paste(lake_name, " Data in Simulation Space")) %>% 
+  colorbar(title = "Soil input")
 
 q2
 r2
 s2
 ```
 
+## Isospace
+
+It can be more informative to look at these plots as "isospaces", with just two of the three variables involved. This will especially help us assess whether or not our fits are going to run into trouble.
+
+```{r, warning=FALSE}
+isospace <- 
+  ggplot() + 
+  geom_point(data = lake_data, aes(x = d13C, y = d15N, color = Age)) + 
+  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
+  geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
+  geom_errorbar(data = source_data, aes(
+    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
+  geom_errorbarh(data = source_data, aes(
+    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
+  labs(
+    title = paste("Lake", lake_name, "Isospace", sep = " "), 
+    color = "Age (yrs)", 
+    x = latex2exp::TeX("$\\delta^{13}C$"), 
+    y = latex2exp::TeX("$\\delta^{15}N$"))
+isospace
+```
+
+Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if that still looks true on an isoscape:
+
+```{r d13C and CN isospace, warning=FALSE}
+#source_data_cn <- read.csv("data/qpt_sources_cn.csv")
+
+isospace_cn <- 
+  ggplot() + 
+  geom_point(data = lake_data, aes(x = d13C, y = C.N, color = Age)) + 
+  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
+  geom_point(data = source_data, aes(x = Meand13C, y = MeanCN), color = "black") + 
+  geom_errorbar(data = source_data, aes(
+    x = Meand13C, y = MeanCN, ymin = MeanCN - SDCN, ymax = MeanCN + SDCN)) +
+  geom_errorbarh(data = source_data, aes(
+    x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
+  labs(
+    title = paste("Lake", lake_name, "Isospace with C:N", sep = " "), 
+    color = "Age (yrs)", 
+    x = latex2exp::TeX("$\\delta^{13}C$"), 
+    y = latex2exp::TeX("$\\C:N$"))
+
+isospace_cn
+```
 
 # Optimization
 
 So now we're going to try to quantify what we just observed visually. 
 
-We're going to perform an optimization test that is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, m (weighted by the errors in the proxies).
+We're going to perform an optimization test that is going to take a real data point (C:N, d13c, d15n) and find the optimal values of a, t, s (weighted by the errors in the proxies).
 
 How do we know how well our model is doing? We'll use the formula for distance on a Cartesian space to see how far the optimal points are from the real data. If the distance is zero, the model is right on top of our data point and we have a perfect fit!
 
@@ -323,7 +379,7 @@ $$
 ## Optim function
 
 #### Task
-This needs to be extended to include more than three sources.
+Extend to include more than three sources.
 
 Here we'll define our optimization function. It takes a give combination of sources (c(a, t, m)) and a real piece of data (with index = i) and spits out the distance between the value predicted by the sources and the real value.
 
@@ -348,14 +404,17 @@ optim_function <- function(x, i) {
   sqrt(((dcn - lake_data$C.N[i]) / dcn_error)^2 + ((d13c - lake_data$d13C[i]) / d13c_error)^2 + ((d15n - lake_data$d15N[i]) / d15n_error)^2)
 }
 
+#   sqrt((dcn - lake_data$C.N[i])^2 + (d13c - lake_data$d13C[i])^2 + (d15n - lake_data$d15N[i])^2)
+# }
+  
 optim_function(c(1, 0, 0), 30)
 ```
 
 Let's examine what this puts out:
 ```{r}
 best_fit_i = 30
-best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
-best_fit
+# best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
+# best_fit
 ```
 
 
@@ -363,7 +422,7 @@ best_fit
 ## Fit data
 
 #### Task
-This needs to be extended to take more than three sources.
+Extend to include more than three sources.
 
 Now we're going to take our full data set and find the optimal values of a, t, and m. 
 
@@ -380,7 +439,7 @@ optim_results <-
     data_frame(
       a_optim = result$par[1] / sum(result$par), 
       t_optim = result$par[2] / sum(result$par), 
-      m_optim = result$par[3] / sum(result$par), 
+      s_optim = result$par[3] / sum(result$par), 
       distance_optim = result$value,
       convergence = result$convergence # If != 0, didn't converge
     )
@@ -388,7 +447,7 @@ optim_results <-
 
 lake_data_optim <- 
   left_join(lake_data, optim_results, by = "i") %>% 
-  mutate(tot_optim = a_optim + t_optim + m_optim)
+  mutate(tot_optim = a_optim + t_optim + s_optim)
 lake_data_optim
 ```
 
@@ -403,7 +462,12 @@ Here, we'll create a ternary diagram with a, t, m (norm) as the axes and all our
 ```{r}
 lake_data_optim_plot <- lake_data_optim %>% 
   #filter(Age < 1500) %>% 
-  ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim)) +
+  ggtern(aes(a_optim, t_optim, s_optim, color = Age, size = distance_optim)) +
+  labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
+       x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
+       title = paste("Lake ", lake_name),
+       size = "Distance of fit") +
+  theme_showarrows() +
   theme_nomask() + 
   geom_point() + 
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3600) +
@@ -428,7 +492,7 @@ best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = 
 
 best_fit_a = best_fit$par[1] / sum(best_fit$par)
 best_fit_t = best_fit$par[2] / sum(best_fit$par)
-best_fit_m = best_fit$par[3] / sum(best_fit$par)
+best_fit_s = best_fit$par[3] / sum(best_fit$par)
 ```
 
 
@@ -445,87 +509,54 @@ This will allow us to see the gradient of our optim function, i.e. how much wigg
 expand.grid(
   a = seq(0,1, by=0.05),
   t = seq(0,1, by=0.05),
-  m = seq(0,1, by=0.05)
+  s = seq(0,1, by=0.05)
 ) %>% 
   tbl_df() %>% 
   mutate(
-    allsum = a+t+m,
+    allsum = a+t+s,
     a = a/allsum,
     t = t/allsum,
-    m = m/allsum,
-    value = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_m), best_fit_i))) %>% 
+    s = s/allsum,
+    value = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_s), best_fit_i))) %>% 
   filter(!is.na(value), !is.nan(value)) %>% 
-  ggtern(aes(a,t,m)) +
+  ggtern(aes(a,t,s)) +
+  labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
+       x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
+       title = paste("Lake ", lake_name),
+       fill = "Distance of fit") +
+  theme_showarrows() +
+  theme_nomask() +
   # calculate mean estimate in each bin
   geom_tri_tern(bins = 20, mapping = aes(fill=..stat..,value=value), fun = mean) +
   # mark minimum
   geom_point(data = lake_data_optim, aes(
     x = lake_data_optim$a_optim[best_fit_i], 
     y = lake_data_optim$t_optim[best_fit_i], 
-    z = lake_data_optim$m_optim[best_fit_i]), color = "red") 
+    z = lake_data_optim$s_optim[best_fit_i]), color = "red") 
   # + scale_fill_gradientn(colours = rainbow(7)) 
 ```
 
 
 # MixSIAR
 
-Outside of this file, I also played a lot with a mixing model called MixSIAR. We'll discuss it briefly.
+Outside of this file, I also played a lot with a mixing model called MixSIAR. 
 
-MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. Like the simulation we just did, it's going to take us from our data to our a, t, m space, but in a more mathematically refined way.
+MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. Like the simulation we just did, it's going to take us from our data to our a, t, s space, but in a more mathematically refined way.
+
+However, this is a more computationally expensive method, and also one that I need to dig into more to really understand what's going on and how to use it best. 
+
+*Depending on how the Isospace plots look, we could try running this.*
 
 ![](figures/Bayesian.png)
 
-## Isospace
 
-#### Task
-Make sure this is taking all the sources.
-
-```{r, warning=FALSE}
-isospace <- 
-  ggplot() + 
-  geom_point(data = lake_data, aes(x = d13C, y = d15N, color = Age)) + 
-  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
-  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
-  geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
-  geom_errorbar(data = source_data, aes(
-    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
-  geom_errorbarh(data = source_data, aes(
-    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
-  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
-  labs(
-    title = "Lake lake Isospace", 
-    color = "Age (yrs)", 
-    x = latex2exp::TeX("$\\delta^{13}C$"), 
-    y = latex2exp::TeX("$\\delta^{15}N$"))
-isospace
-```
-
-Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if that still looks true on an isoscape:
-
-```{r d13C and CN isospace, warning=FALSE}
-#source_data_cn <- read.csv("data/qpt_sources_cn.csv")
-
-isospace_cn <- 
-  ggplot() + 
-  geom_point(data = lake_data, aes(x = d13C, y = C.N, color = Age)) + 
-  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
-  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
-  geom_point(data = source_data, aes(x = Meand13C, y = MeanCN), color = "black") + 
-  geom_errorbar(data = source_data, aes(
-    x = Meand13C, y = MeanCN, ymin = MeanCN - SDCN, ymax = MeanCN + SDCN)) +
-  geom_errorbarh(data = source_data, aes(
-    x = Meand13C, y = MeanCN, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
-  geom_text(data = source_data, aes(x = Meand13C, y = MeanCN, label = Source, hjust = -0.5, vjust = 2)) +
-  labs(
-    title = "Lake QPT Isospace", 
-    color = "Age (yrs)", 
-    x = latex2exp::TeX("$\\delta^{13}C$"), 
-    y = latex2exp::TeX("$\\C:N$"))
-
-isospace_cn
-```
 
 # Outputs
 
 #### Task
 Make this output useful things automatically.
+
+
+# Thoughts/Takeaways
+* C/N might be throwing everything off. It appears to drop drastically by the time it reaches the sediment, which probably explains why most of the points fall on the edge or outside of the range.
+* d13C (and d15N, probably to a lesser extent) could easily change as well, if there are isotopic differences between biomolecules.
