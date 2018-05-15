@@ -1,5 +1,5 @@
 ---
-title: "Paleoecology of Baffin Island"
+title: "Paleoecology of Iceland"
 subtitle: "Stable Isotope Analysis of Lake Sediments"
 author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
@@ -61,16 +61,16 @@ normalize <- function(x, y, z) {
 }
 
 #General mass balance equation
-calculate_proxy <- function(a, proxy_a, t, proxy_t, m, proxy_m) {
-  (a * proxy_a + t * proxy_t + m * proxy_m) / (a + t + m)
+calculate_proxy <- function(a, proxy_a, t, proxy_t, s, proxy_s) {
+  (a * proxy_a + t * proxy_t + s * proxy_s) / (a + t + s)
 }
 
 #Error for mass balance eqn
-calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m_error) {
-  a_norm = normalize(a, t, m)
-  t_norm = normalize(t, m, a)
-  m_norm = normalize(m, a, t)
-  sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (m_norm * proxy_m_error) ^ 2 )
+calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, s, proxy_s_error) {
+  a_norm = normalize(a, t, s)
+  t_norm = normalize(t, s, a)
+  s_norm = normalize(s, a, t)
+  sqrt((a_norm * proxy_a_error) ^ 2 + (t_norm * proxy_t_error) ^ 2 + (s_norm * proxy_s_error) ^ 2 )
 }
 ```
 
@@ -78,14 +78,21 @@ calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, m, proxy_m
 
 ### Import source data 
 
-####Task
-Make it clear which paper the source is coming from
 
 ```{r source data import, warning=FALSE}
-source_data = read.csv("data/qpt_sources_all.csv")
+source_data = read.csv("data/iceland_sources.csv")
 source_data
-```
 
+# Just makes it easier to call later
+terr <- source_data %>% 
+  filter(Source == "Terrestrial")
+
+aqua <- source_data %>% 
+  filter(Source == "Aquatic")
+
+soil <- source_data %>% 
+  filter(Source == "Soil")
+```
 
 ### Define parameters
 
@@ -94,34 +101,35 @@ Automate this.
 
 ```{r}
 #source parameters
-parameters <- 
+parameters <-
   data_frame(
-    cn_a = 8.8,
-    cn_t = 48,
-    cn_m = 31,
-    d13c_a = -30.7,
-    d13c_t = -26.9,
-    d13c_m = -21.8,
-    d15n_a = 6.5,
-    d15n_t = -1.6,
-    d15n_m = 0.77
+    cn_a = aqua[["MeanCN"]],
+    cn_t = terr[["MeanCN"]],
+    cn_s = soil[["MeanCN"]],
+    d13c_a = aqua[["Meand13C"]],
+    d13c_t = terr[["Meand13C"]],
+    d13c_s = soil[["Meand13C"]],
+    d15n_a = aqua[["Meand15N"]],
+    d15n_t = terr[["Meand15N"]],
+    d15n_s = soil[["Meand15N"]]
   )
 
-parameter_errors <- 
+parameter_errors <-
   data_frame(
-    cn_a = 0.4,
-    cn_t = 29,
-    cn_m = 4.6,
-    d13c_a = 0.28,
-    d13c_t = 1.21,
-    d13c_m = 1.55,
-    d15n_a = 0.42,
-    d15n_t = 3.6,
-    d15n_m = 0.47
+    cn_a = aqua[["SDCN"]],
+    cn_t = terr[["SDCN"]],
+    cn_s = soil[["SDCN"]],
+    d13c_a = aqua[["SDd13C"]],
+    d13c_t = terr[["SDd13C"]],
+    d13c_s = soil[["SDd13C"]],
+    d15n_a = aqua[["SDd15N"]],
+    d15n_t = terr[["SDd15N"]],
+    d15n_s = soil[["SDd15N"]]
   )
+
 ```
 
-
+### Simulations
 
 ```{r}
 
@@ -130,7 +138,7 @@ input_scenarios <-
   expand.grid(
     a = seq(0, 100, 10),
     t = seq(0, 100, 10),
-    m = seq(0, 100, 10)
+    s = seq(0, 100, 10)
   ) %>% 
   merge(parameters) %>% 
   tbl_df()
@@ -138,23 +146,23 @@ input_scenarios <-
 #calculate expected proxy values given input scenarios
 simulations <- 
   input_scenarios %>% 
-  merge(data_frame(i = 1:25)) %>% 
+  merge(data_frame(j = 1:5)) %>%
   mutate(
-    a_norm = normalize(a, t, m),
-    t_norm = normalize(t, a, m),
-    m_norm = normalize(m, a, t),
-    cn_a_w_error = cn_a + rnorm(length(a), sd = 0.4),
-    cn_t_w_error = cn_t + rnorm(length(t), sd = 29),
-    cn_m_w_error = cn_m + rnorm(length(m), sd = 4.6),
-    cn = calculate_proxy(a, cn_a_w_error, t, cn_t_w_error, m, cn_m_w_error),
-    d13c_a_w_error = d13c_a + rnorm(length(a), sd = 0.28),
-    d13c_t_w_error = d13c_t + rnorm(length(t), sd = 1.21),
-    d13c_m_w_error = d13c_m + rnorm(length(m), sd = 1.55),
-    d13c = calculate_proxy(a, d13c_a_w_error, t, d13c_t_w_error, m, d13c_m_w_error),
-    d15n_a_w_error = d15n_a + rnorm(length(a), sd = 0.42),
-    d15n_t_w_error = d15n_t + rnorm(length(t), sd = 3.6),
-    d15n_m_w_error = d15n_m + rnorm(length(m), sd = 0.47),
-    d15n = calculate_proxy(a, d15n_a_w_error, t, d15n_t_w_error, m, d15n_m_w_error)
+    a_norm = normalize(a, t, s),
+    t_norm = normalize(t, s, a),
+    s_norm = normalize(s, a, t),
+    cn_a_w_error = cn_a + rnorm(length(a), sd = parameter_errors[["cn_a"]]),
+    cn_t_w_error = cn_t + rnorm(length(t), sd = parameter_errors[["cn_t"]]),
+    cn_s_w_error = cn_s + rnorm(length(s), sd = parameter_errors[["cn_s"]]),
+    cn = calculate_proxy(a, cn_a_w_error, t, cn_t_w_error, s, cn_s_w_error),
+    d13c_a_w_error = d13c_a + rnorm(length(a), sd = parameter_errors[["d13c_a"]]),
+    d13c_t_w_error = d13c_t + rnorm(length(t), sd = parameter_errors[["d13c_t"]]),
+    d13c_s_w_error = d13c_s + rnorm(length(s), sd = parameter_errors[["d13c_s"]]),
+    d13c = calculate_proxy(a, d13c_a_w_error, t, d13c_t_w_error, s, d13c_s_w_error),
+    d15n_a_w_error = d15n_a + rnorm(length(a), sd = parameter_errors[["d15n_a"]]),
+    d15n_t_w_error = d15n_t + rnorm(length(t), sd = parameter_errors[["d15n_t"]]),
+    d15n_s_w_error = d15n_s + rnorm(length(s), sd = parameter_errors[["d15n_s"]]),
+    d15n = calculate_proxy(a, d15n_a_w_error, t, d15n_t_w_error, s, d15n_s_w_error)
   )
 
 simulations
@@ -167,26 +175,26 @@ simulations
 Expand this to more sources --> just more plots? Or a better way? Not really necessary...
 
 ```{r 3D Plots, warning=FALSE}
-q <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
+a_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
 
-r <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>% 
+t_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
 
-s <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~m_norm) %>% 
+s_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~s_norm) %>% 
   add_markers() %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
-q
-r
-s
+a_sim_plot
+t_sim_plot
+s_sim_plot
 ```
 
 # Data
@@ -198,13 +206,13 @@ Now let's import the EA data (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$).
 
 
 ```{r EA data import}
-qpt_data = read.csv("data/QPT16_2A_EA_results_no_outliers.csv")
-qpt_data <-
-  qpt_data %>%
-  mutate("d15N" = d15N - 25, #This is a relic of the data processing, should fix elsewhere
+lake_data = read.csv("data/arn.csv")
+lake_data <-
+  lake_data %>%
+  mutate("Age" = parse_number(Age),
          "Bsi" = parse_number(Bsi)
     )
-qpt_data
+lake_data
 ```
 
 
@@ -213,8 +221,8 @@ qpt_data
 
 ```{r plot data alone}
 
-qpt_data_plot <- 
-  qpt_data %>%
+lake_data_plot <- 
+  lake_data %>%
   gather(var, val, c("Bsi", "d13C", "d15N", "C.N")) %>% 
   ggplot() +
   aes(Age, val, group = var) +
@@ -224,9 +232,9 @@ qpt_data_plot <-
   scale_x_reverse(expand = c(0,500)) + 
   scale_y_continuous(name = "") +
   xlab("Age (years)") +
-  labs(title = "Lake QPT")
+  labs(title = "Lake ARN")
 
-qpt_data_plot
+lake_data_plot
 ```
 
 
@@ -237,7 +245,7 @@ qpt_data_plot
 ```{r 3D plot of data alone}
 dataplot <- 
   plot_ly() %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = qpt_data$Age) %>% 
+  add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = lake_data$Age) %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = "delta13C"),
                       zaxis = list(title = "delta15N")
@@ -258,7 +266,7 @@ Either extend this to all inputs like above, or just do one representative one. 
 q2 <- 
   plot_ly() %>% 
   add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$a_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
@@ -266,7 +274,7 @@ q2 <-
 r2 <- 
   plot_ly() %>% 
   add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$t_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>%
+  add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>%
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
@@ -274,7 +282,7 @@ r2 <-
 s2 <- 
   plot_ly() %>% 
   add_markers(simulations, x = simulations$cn, y = simulations$d13c, z = simulations$d15n, color = simulations$m_norm, opacity = 0.3) %>% 
-  add_markers(qpt_data, x = qpt_data$C.N, y = qpt_data$d13C, z = qpt_data$d15N, color = "red") %>% 
+  add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = "red") %>% 
   layout(scene = list(xaxis = list(title = "C:N"),
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')))
@@ -324,26 +332,28 @@ Here we'll define our optimization function. It takes a give combination of sour
 optim_function <- function(x, i) {
   a <- x[1]
   t <- x[2]
-  m <- x[3]
+  s <- x[3]
   
   #calculate proxies
-  dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, m, parameters$cn_m)
-  d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, m, parameters$d13c_m)
-  d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, m, parameters$d15n_m)
+  dcn <- calculate_proxy(a, parameters$cn_a, t, parameters$cn_t, s, parameters$cn_s)
+  d13c <- calculate_proxy(a, parameters$d13c_a, t, parameters$d13c_t, s, parameters$d13c_s)
+  d15n <- calculate_proxy(a, parameters$d15n_a, t, parameters$d15n_t, s, parameters$d15n_s)
   
   #calculate errors
-  dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, m, parameter_errors$cn_m)
-  d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, m, parameter_errors$d13c_m)
-  d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, m, parameter_errors$d15n_m)
+  dcn_error <- calculate_proxy_error(a, parameter_errors$cn_a, t, parameter_errors$cn_t, s, parameter_errors$cn_s)
+  d13c_error <- calculate_proxy_error(a, parameter_errors$d13c_a, t, parameter_errors$d13c_t, s, parameter_errors$d13c_s)
+  d15n_error <- calculate_proxy_error(a, parameter_errors$d15n_a, t, parameter_errors$d15n_t, s, parameter_errors$d15n_s)
   
   #calculate distance btwn test point and data
-  sqrt(((dcn - qpt_data$C.N[i]) / dcn_error)^2 + ((d13c - qpt_data$d13C[i]) / d13c_error)^2 + ((d15n - qpt_data$d15N[i]) / d15n_error)^2)
+  sqrt(((dcn - lake_data$C.N[i]) / dcn_error)^2 + ((d13c - lake_data$d13C[i]) / d13c_error)^2 + ((d15n - lake_data$d15N[i]) / d15n_error)^2)
 }
+
+optim_function(c(1, 0, 0), 30)
 ```
 
 Let's examine what this puts out:
 ```{r}
-best_fit_i = 3
+best_fit_i = 30
 best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
 best_fit
 ```
@@ -358,10 +368,10 @@ This needs to be extended to take more than three sources.
 Now we're going to take our full data set and find the optimal values of a, t, and m. 
 
 ```{r}
-qpt_data <- qpt_data %>% mutate(i = row_number())
+lake_data <- lake_data %>% mutate(i = row_number())
 
 optim_results <- 
-  qpt_data %>% select(i) %>% 
+  lake_data %>% select(i) %>% 
   group_by(i) %>%
   do({
     i <- .$i[1]
@@ -376,10 +386,10 @@ optim_results <-
     )
   })
 
-qpt_data_optim <- 
-  left_join(qpt_data, optim_results, by = "i") %>% 
+lake_data_optim <- 
+  left_join(lake_data, optim_results, by = "i") %>% 
   mutate(tot_optim = a_optim + t_optim + m_optim)
-qpt_data_optim
+lake_data_optim
 ```
 
 
@@ -391,7 +401,7 @@ This could be done better with the filled lines to the bottom plot that seb whip
 Here, we'll create a ternary diagram with a, t, m (norm) as the axes and all our data points plotted. We'll color them by age and size them by their best fit distances.
 
 ```{r}
-qpt_data_optim_plot <- qpt_data_optim %>% 
+lake_data_optim_plot <- lake_data_optim %>% 
   #filter(Age < 1500) %>% 
   ggtern(aes(a_optim, t_optim, m_optim, color = Age, size = distance_optim)) +
   theme_nomask() + 
@@ -399,7 +409,7 @@ qpt_data_optim_plot <- qpt_data_optim %>%
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3600) +
   scale_size_continuous(range = c(10,1))
 
-qpt_data_optim_plot
+lake_data_optim_plot
 
 ```
 
@@ -412,7 +422,7 @@ Now we have some results, but we already suspect that some of the fits we got fr
 Find a way to assess fits with gradients as well.
 
 ```{r}
-best_fit_i = 3
+best_fit_i = 30
 best_fit <- optim(c(0.33, 0.33, 0.34), i = best_fit_i, optim_function, method = "L-BFGS-B", lower = 0, upper = 1)
 #best_fit
 
@@ -449,10 +459,10 @@ expand.grid(
   # calculate mean estimate in each bin
   geom_tri_tern(bins = 20, mapping = aes(fill=..stat..,value=value), fun = mean) +
   # mark minimum
-  geom_point(data = qpt_data_optim, aes(
-    x = qpt_data_optim$a_optim[best_fit_i], 
-    y = qpt_data_optim$t_optim[best_fit_i], 
-    z = qpt_data_optim$m_optim[best_fit_i]), color = "red") 
+  geom_point(data = lake_data_optim, aes(
+    x = lake_data_optim$a_optim[best_fit_i], 
+    y = lake_data_optim$t_optim[best_fit_i], 
+    z = lake_data_optim$m_optim[best_fit_i]), color = "red") 
   # + scale_fill_gradientn(colours = rainbow(7)) 
 ```
 
@@ -473,8 +483,8 @@ Make sure this is taking all the sources.
 ```{r, warning=FALSE}
 isospace <- 
   ggplot() + 
-  geom_point(data = qpt_data, aes(x = d13C, y = d15N, color = Age)) + 
-  #geom_path(data = qpt_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  geom_point(data = lake_data, aes(x = d13C, y = d15N, color = Age)) + 
+  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
   geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
   geom_errorbar(data = source_data, aes(
@@ -483,7 +493,7 @@ isospace <-
     x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
   geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
-    title = "Lake QPT Isospace", 
+    title = "Lake lake Isospace", 
     color = "Age (yrs)", 
     x = latex2exp::TeX("$\\delta^{13}C$"), 
     y = latex2exp::TeX("$\\delta^{15}N$"))
@@ -497,8 +507,8 @@ Previously, it looked like C:N changed more than $\delta^{15}N$. Let's see if th
 
 isospace_cn <- 
   ggplot() + 
-  geom_point(data = qpt_data, aes(x = d13C, y = C.N, color = Age)) + 
-  #geom_path(data = qpt_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  geom_point(data = lake_data, aes(x = d13C, y = C.N, color = Age)) + 
+  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
   geom_point(data = source_data, aes(x = Meand13C, y = MeanCN), color = "black") + 
   geom_errorbar(data = source_data, aes(
