@@ -1,6 +1,6 @@
 ---
-title: "Vestra Gíslholtsvatn"
-subtitle: "Stable Isotope Analysis of Iceland Lake Sediments"
+title: "Tröllkonuvatn"
+subtitle: "No Terrestrial"
 author: "Jonathan Raberg"
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -9,7 +9,7 @@ output:
     toc: yes
     toc_depth: 2
     toc_float: true
-    code_folding: show
+    code_folding: hide
 editor_options:
   chunk_output_type: inline
 ---
@@ -78,15 +78,15 @@ calculate_proxy_error <- function(a, proxy_a_error, t, proxy_t_error, s, proxy_s
 
 
 ```{r source data import, warning=FALSE}
-source_data = read.csv("data/iceland_sources.csv")
+source_data = read.csv("data/iceland_sources_a_split.csv")
 source_data
 
 # Just makes it easier to call later
-terr <- source_data %>% 
-  filter(Source == "Terrestrial")
+algae <- source_data %>% 
+  filter(Source == "Algae")
 
 aqua <- source_data %>% 
-  filter(Source == "Aquatic")
+  filter(Source == "Aquatic_plants")
 
 soil <- source_data %>% 
   filter(Source == "Soil")
@@ -94,31 +94,35 @@ soil <- source_data %>%
 
 ### Define parameters
 
+"t" is now referring to algae, cus I'm lazy...
+"a" is aquatic plants
+"s" is soil
+
 ```{r}
 #source parameters
 parameters <-
   data_frame(
     cn_a = aqua[["MeanCN"]],
-    cn_t = terr[["MeanCN"]],
+    cn_t = algae[["MeanCN"]],
     cn_s = soil[["MeanCN"]],
     d13c_a = aqua[["Meand13C"]],
-    d13c_t = terr[["Meand13C"]],
+    d13c_t = algae[["Meand13C"]],
     d13c_s = soil[["Meand13C"]],
     d15n_a = aqua[["Meand15N"]],
-    d15n_t = terr[["Meand15N"]],
+    d15n_t = algae[["Meand15N"]],
     d15n_s = soil[["Meand15N"]]
   )
 
 parameter_errors <-
   data_frame(
     cn_a = aqua[["SDCN"]],
-    cn_t = terr[["SDCN"]],
+    cn_t = algae[["SDCN"]],
     cn_s = soil[["SDCN"]],
     d13c_a = aqua[["SDd13C"]],
-    d13c_t = terr[["SDd13C"]],
+    d13c_t = algae[["SDd13C"]],
     d13c_s = soil[["SDd13C"]],
     d15n_a = aqua[["SDd15N"]],
-    d15n_t = terr[["SDd15N"]],
+    d15n_t = algae[["SDd15N"]],
     d15n_s = soil[["SDd15N"]]
   )
 
@@ -173,7 +177,7 @@ a_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~a_nor
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
          title = "Simulation Space") %>% 
-  colorbar(title = "Aquatic input")
+  colorbar(title = "Aquatic plant input")
 
 t_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_norm) %>% 
   add_markers() %>% 
@@ -181,7 +185,7 @@ t_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~t_nor
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
          title = "Simulation Space") %>% 
-  colorbar(title = "Terrestrial input")
+  colorbar(title = "Algae input")
 
 s_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~s_norm) %>% 
   add_markers() %>% 
@@ -191,9 +195,9 @@ s_sim_plot <- plot_ly(simulations, x = ~cn, y = ~d13c, z = ~d15n, color = ~s_nor
          title = "Simulation Space") %>% 
   colorbar(title = "Soil input")
 
-a_sim_plot
-t_sim_plot
-s_sim_plot
+# a_sim_plot
+# t_sim_plot
+# s_sim_plot
 ```
 
 # Data
@@ -205,9 +209,9 @@ Now let's import the EA data (i.e. C:N, $\delta^{13}C$ and $\delta^{15}N$).
 
 
 ```{r EA data import}
-lake_name <- "VGHV"
+lake_name <- "TRK"
 
-lake_data = read.csv("data/vghv.csv")
+lake_data = read.csv("data/trk.csv")
 lake_data <-
   lake_data %>%
   mutate("Age" = parse_number(Age),
@@ -271,7 +275,7 @@ q2 <-
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
          title = paste(lake_name, "Data in Simulation Space")) %>% 
-  colorbar(title = "Aquatic input")
+  colorbar(title = "Aquatic plant input")
 
 r2 <- 
   plot_ly() %>% 
@@ -281,7 +285,7 @@ r2 <-
                       yaxis = list(title = 'delta13C'),
                       zaxis = list(title = 'delta15N')),
          title = paste(lake_name, "Data in Simulation Space")) %>% 
-  colorbar(title = "Terrestrial input")
+  colorbar(title = "Algal input")
 
 s2 <- 
   plot_ly() %>% 
@@ -366,7 +370,7 @@ To deal with this, we'll also normalize these distances by their standard deviat
 $$
 \begin{align*}
 x =& \ \delta^{13}C \\
-y =& \ \delta^{15}C \\
+y =& \ \delta^{15}N \\
 z =& \ C:N \\
 distance =& \sqrt{(x_{model} - x_{real})^2 / (SD_x)^2 + (y_{model} - y_{real})^2  / (SD_y)^2 +(z_{model} - z_{real})^2  / (SD_z)^2}
 \end{align*}
@@ -461,8 +465,8 @@ Here, we'll create a ternary diagram with a, t, m (norm) as the axes and all our
 lake_data_optim_plot <- lake_data_optim %>% 
   #filter(Age < 1500) %>% 
   ggtern(aes(a_optim, t_optim, s_optim, color = Age, size = distance_optim)) +
-  labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
-       x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
+  labs(x = "Aquatic Plant", y = "Algae", z = "Soil", 
+       x_arrow = "Aquatic Plant", y_arrow = "Algae", z_arrow = "Soil",
        title = paste("Lake", lake_name),
        size = "Distance of fit") +
   theme_showarrows() +
@@ -518,8 +522,8 @@ expand.grid(
     value = map2_dbl(a, t, ~optim_function(c(.x, .y, best_fit_s), best_fit_i))) %>% 
   filter(!is.na(value), !is.nan(value)) %>% 
   ggtern(aes(a,t,s)) +
-  labs(x = "Aquatic", y = "Terrestrial", z = "Soil", 
-       x_arrow = "Aquatic", y_arrow = "Terrestrial", z_arrow = "Soil",
+  labs(x = "Aquatic Plant", y = "Algae", z = "Soil", 
+       x_arrow = "Aquatic Plant", y_arrow = "Algae", z_arrow = "Soil",
        title = paste("Lake", lake_name),
        fill = "Distance of fit") +
   theme_showarrows() +
@@ -535,20 +539,6 @@ expand.grid(
 ```
 
 
-# MixSIAR
-
-Outside of this file, I also played a lot with a mixing model called MixSIAR. 
-
-MixSIAR is a Bayesian Markov Chain Monte Carlo stable isotope mixing model. Like the simulation we just did, it's going to take us from our data to our a, t, s space, but in a more mathematically refined way.
-
-However, this is a more computationally expensive method, and also one that I need to dig into more to really understand what's going on and how to use it best. 
-
-*Depending on how the Isospace plots look, we could try running this.*
-
-![](figures/Bayesian.png)
-
-
-
 # Outputs
 
 #### Task
@@ -556,5 +546,4 @@ Make this output useful things automatically.
 
 
 # Thoughts/Takeaways
-* C/N might be throwing everything off. It appears to drop drastically by the time it reaches the sediment, which probably explains why most of the points fall on the edge or outside of the range.
-* d13C (and d15N, probably to a lesser extent) could easily change as well, if there are isotopic differences between biomolecules.
+* Algae plots very close to soils, which is unfortunate...
