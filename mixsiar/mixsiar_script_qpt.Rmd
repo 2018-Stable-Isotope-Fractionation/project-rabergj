@@ -8,10 +8,16 @@ output:
     toc: yes
     toc_depth: 2
     toc_float: true
-    code_folding: show
+    code_folding: hide
 editor_options:
   chunk_output_type: inline
 ---
+
+*Iceland lakes that could work:*
+* ARN (between algae and aquatic plants)
+* HVT (though it has some outside isospace)
+* TORF (between algae and aquatic plants)
+* TRK (between a, ap, and t!)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
