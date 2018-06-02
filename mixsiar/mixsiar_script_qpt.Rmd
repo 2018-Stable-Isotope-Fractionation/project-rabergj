@@ -37,9 +37,9 @@ library(MixSIAR)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake <- "skr_abbrv"
+lake <- "skr"
 run_length <- "test"
-my_dir <- paste(lake, run_length, "1", sep = "_") # add appendix here if needed
+my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
@@ -179,6 +179,7 @@ plot_data(filename=file.path(my_dir, "isospace_plot"),
           plot_save_pdf=TRUE,
           plot_save_png=FALSE,
           mix,source,discr) 
+dev.off()
 ```
 
 If 2 isotopes/tracers, calculate normalized surface area of the convex hull polygon(s)
