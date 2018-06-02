@@ -37,7 +37,7 @@ library(MixSIAR)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake <- "skr"
+lake <- "skr_small"
 run_length <- "test"
 my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
@@ -179,7 +179,6 @@ plot_data(filename=file.path(my_dir, "isospace_plot"),
           plot_save_pdf=TRUE,
           plot_save_png=FALSE,
           mix,source,discr) 
-dev.off()
 ```
 
 If 2 isotopes/tracers, calculate normalized surface area of the convex hull polygon(s)
@@ -248,8 +247,8 @@ JAGS output will be saved as 'jags.1'
 # Good idea to use 'test' first to check if
 #   1) the data are loaded correctly, and 
 #   2) the model is specified correctly
-jags.1 <- run_model(run="test", mix, source, discr, model_filename, 
-                    alpha.prior = 1, resid_err, process_err)
+# jags.1 <- run_model(run="test", mix, source, discr, model_filename, 
+#                     alpha.prior = 1, resid_err, process_err)
 ```
 
 ## Real run
