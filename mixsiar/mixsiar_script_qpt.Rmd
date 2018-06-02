@@ -50,11 +50,29 @@ i.e. your:
 
 To run on your data, replace the system.file call with the path to your file
 
-## QPT example
+# Wolves example
+
+## Wolves data
+
+```{r}
+# # To run on your data, replace the system.file call with the path to your file
+# mix.filename <- file.path("extdata/wolves_consumer.csv")
+# 
+# # Load mixture data
+# mix <- load_mix_data(filename=mix.filename, 
+#                      iso_names=c("d13C","d15N"), 
+#                      factors=c("Region"), 
+#                      fac_random=c(TRUE), 
+#                      fac_nested=c(FALSE), 
+#                      cont_effects=NULL)
+```
+
+
+## Lake data
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-mix.filename <- file.path("data", "qpt_consumer.csv")
+mix.filename <- file.path("extdata/skr_sed_abbrv.csv")
 
 # Load mixture data
 mix <- load_mix_data(filename=mix.filename, 
@@ -77,22 +95,23 @@ i.e. your:
  'data_type': "means" or "raw", is your source data as means+SD, or do you have raw data
 
 
-## Wolves example
+## Wolves sources
 
 ```{r}
-# To run on your data, replace the system.file call with the path to your file
-source.filename <- system.file("extdata", "wolves_sources.csv", package = "MixSIAR")
-
-# Load source data
-source <- load_source_data(filename=source.filename, source_factors="Region", 
-                            conc_dep=FALSE, data_type="means", mix)
+# # To run on your data, replace the system.file call with the path to your file
+# source.filename <- system.file("extdata", "wolves_sources.csv", package = "MixSIAR")
+# 
+# # Load source data
+# source <- load_source_data(filename=source.filename, source_factors="Region", 
+#                             conc_dep=FALSE, data_type="means", mix)
 ```
 
-## QPT sources
+## Lake sources
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-source.filename <- file.path("data", "qpt_sources_nosoil.csv")
+source.filename <- file.path("extdata", "iceland_sources_a_split.csv")
+# file.exists("extdata/qpt_sources.csv")
 
 # Load source data
 source <- load_source_data(filename=source.filename, source_factors=NULL, 
@@ -107,15 +126,29 @@ i.e. your:
 
 'filename' - name of the CSV file with discrimination data
 
-## QPT discriminations
+## Wolves discriminations
+
+```{r}
+# # To run on your data, replace the system.file call with the path to your file
+# discr.filename <- file.path("extdata", "wolves_discrimination.csv")
+# # file.exists("extdata/wolves_discrimination.csv")
+# 
+# # Load discrimination data
+# discr <- load_discr_data(filename=discr.filename, mix)
+```
+
+
+## Lakes discriminations (= 0)
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-discr.filename <- file.path("data", "qpt_discrimination_nosoil.csv")
+discr.filename <- file.path("extdata", "discrimination.csv")
+# file.exists("extdata/wolves_discrimination.csv")
 
 # Load discrimination data
 discr <- load_discr_data(filename=discr.filename, mix)
 ```
+
 
 # Make isospace plot
 Are the data loaded correctly?
@@ -128,7 +161,7 @@ Are one or more of your sources confounded/hidden?
  'plot_save_png' - TRUE or FALSE, should MixSIAR save the plot as a .png?
  
 ```{r}
-plot_data(filename="isospace_plot", 
+plot_data(filename=file.path("skr_abbrv_output_normal_run", "isospace_plot"), 
           plot_save_pdf=TRUE,
           plot_save_png=FALSE,
           mix,source,discr) 
@@ -207,8 +240,8 @@ jags.1 <- run_model(run="test", mix, source, discr, model_filename,
 
 ```{r}
 # After a test run works, increase the MCMC run to a value that may converge
-# jags.1 <- run_model(run="normal", mix, source, discr, model_filename,
-# alpha.prior = 1, resid_err, process_err)
+jags.1 <- run_model(run="normal", mix, source, discr, model_filename,
+                    alpha.prior = 1, resid_err, process_err)
 ```
 
 
@@ -216,23 +249,25 @@ jags.1 <- run_model(run="test", mix, source, discr, model_filename,
 
 Choose output options (see ?output_options for details)
 
+** A new folder apparently needs to be created every time.
+
 ```{r}
 output_options <- list(summary_save = TRUE,                 
-                       summary_name = file.path("output", "summary_statistics"), 
-                       sup_post = TRUE,                    
+                       summary_name = file.path("skr_abbrv_output_normal_run", "summary_statistics"), 
+                       sup_post = FALSE,                    
                        plot_post_save_pdf = TRUE,           
-                       plot_post_name = file.path("output", "posterior_density"),
-                       sup_pairs = TRUE,             
+                       plot_post_name = file.path("skr_abbrv_output_normal_run", "posterior_density"),
+                       sup_pairs = FALSE,             
                        plot_pairs_save_pdf = TRUE,    
-                       plot_pairs_name = file.path("output", "pairs_plot"),
-                       sup_xy = TRUE,           
+                       plot_pairs_name = file.path("skr_abbrv_output_normal_run", "pairs_plot"),
+                       sup_xy = FALSE,           
                        plot_xy_save_pdf = TRUE,
-                       plot_xy_name = file.path("output", "xy_plot"),
+                       plot_xy_name = file.path("skr_abbrv_output_normal_run", "xy_plot"),
                        gelman = TRUE,
                        heidel = FALSE,  
                        geweke = TRUE,   
                        diag_save = TRUE,
-                       diag_name = file.path("output", "diagnostics"),
+                       diag_name = file.path("skr_abbrv_output_normal_run", "diagnostics"),
                        indiv_effect = FALSE,       
                        plot_post_save_png = FALSE, 
                        plot_pairs_save_png = FALSE,
@@ -247,5 +282,54 @@ output_JAGS(jags.1, mix, source, output_options)
 
 ```{r}
 #read_delim(file = file.path("output", "summary_statistics.txt"), skip = 7, delim = "")
+```
+
+
+
+```{r}
+sum_stats_mod <- read.csv("skr_abbrv_output_normal_run/summary_statistics_modified.csv") %>% 
+  mutate(
+    "Age" = parse_number(Age)
+  )
+sum_stats_mod
+```
+
+```{r}
+means_area_plot <- sum_stats_mod %>%
+  gather(var, value, Mean) %>% 
+  ggplot() +
+  aes(Age, value, fill = Type) +
+  geom_area()
+  #geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
+
+means_point_plot <- sum_stats_mod %>%
+  gather(var, value, Mean) %>% 
+  ggplot() +
+  aes(Age, value, color = Type) +
+  geom_point() +
+  geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
+
+pdf("skr_abbrv_output_normal_run/means_point_plot.pdf",width=8,height=5,paper='special')
+sum_plot_point
+dev.off()
+
+pdf("skr_abbrv_output_normal_run/means_area_plot.pdf",width=8,height=5,paper='special')
+sum_plot_area
+dev.off()
+
+# # If you want SD included in the area plot, start here...
+# sum_plot <- sum_stats_mod %>%
+#   mutate(
+#     Mean = Mean - SD
+#   ) %>% 
+#   gather(var, value, Mean, SD) %>% 
+#   mutate(
+#     Type = paste(Type, var, sep = "_")
+#     ) %>% 
+#   ggplot() +
+#   aes(Age, value, fill = Type) +
+#   #geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=.1) + # This puts the bars in the wrong spots
+#   geom_area()
+# sum_plot
 ```
 
