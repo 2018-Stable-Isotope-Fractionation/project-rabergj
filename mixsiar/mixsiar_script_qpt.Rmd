@@ -303,10 +303,9 @@ output_JAGS(jags.1, mix, source, output_options)
 
 ## My plots
 ```{r}
-sum_stats_mod <- read.csv("skr_abbrv_output_normal_run/summary_statistics_modified.csv") %>% 
-  mutate(
-    "Age" = parse_number(Age)
-  )
+sum_stats_mod <- read.csv(file.path(my_dir, "summary_statistics_mod.csv")) %>% 
+  mutate("Age" = parse_number(Age)) %>% 
+  select(-starts_with("X"))
 sum_stats_mod
 ```
 
@@ -325,13 +324,9 @@ means_point_plot <- sum_stats_mod %>%
   geom_point() +
   geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
 
-pdf("skr_abbrv_output_normal_run/means_point_plot.pdf",width=8,height=5,paper='special')
-sum_plot_point
-dev.off()
+means_area_plot
+means_point_plot
 
-pdf("skr_abbrv_output_normal_run/means_area_plot.pdf",width=8,height=5,paper='special')
-sum_plot_area
-dev.off()
 
 # # If you want SD included in the area plot, start here...
 # sum_plot <- sum_stats_mod %>%
@@ -347,5 +342,12 @@ dev.off()
 #   #geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=.1) + # This puts the bars in the wrong spots
 #   geom_area()
 # sum_plot
+```
+### Save my plots
+
+```{r}
+pdf(file.path(my_dir,"means_area_plot.pdf"),width=8,height=5,paper='special')
+
+pdf(file.path(my_dir,"means_point_plot.pdf"),width=8,height=5,paper='special')
 ```
 
