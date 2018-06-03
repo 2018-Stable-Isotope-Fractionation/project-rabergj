@@ -45,7 +45,7 @@ if(!dir.exists(my_dir)) {
 } else {
   "Error: Directory already exists"
 }
-
+options(max.print = 1000) # Their default
 ```
 
 
@@ -291,6 +291,7 @@ output_options <- list(summary_save = TRUE,
 
 ```{r}
 # Create diagnostics, summary statistics, and posterior plots
+options(max.print = 50000)
 output_JAGS(jags.1, mix, source, output_options)
 ```
 
