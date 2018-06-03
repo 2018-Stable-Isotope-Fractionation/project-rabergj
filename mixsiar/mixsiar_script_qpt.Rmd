@@ -302,6 +302,7 @@ output_JAGS(jags.1, mix, source, output_options)
 
 
 ## My plots
+
 ```{r}
 sum_stats_mod <- read.csv(file.path(my_dir, "summary_statistics_mod.csv")) %>% 
   mutate("Age" = parse_number(Age)) %>% 
@@ -310,17 +311,20 @@ sum_stats_mod
 ```
 
 ```{r}
-means_area_plot <- sum_stats_mod %>%
+p <- sum_stats_mod %>%
   gather(var, value, Mean) %>% 
   ggplot() +
-  aes(Age, value, fill = Type) +
+  aes(Age, value) +
+  scale_x_reverse() +
+  labs(y = "Fractional Contribution")
+
+means_area_plot <- p +
+  aes(fill = Type) +
   geom_area()
   #geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
 
-means_point_plot <- sum_stats_mod %>%
-  gather(var, value, Mean) %>% 
-  ggplot() +
-  aes(Age, value, color = Type) +
+means_point_plot <- p +
+  aes(color = Type) +
   geom_point() +
   geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
 
@@ -343,7 +347,9 @@ means_point_plot
 #   geom_area()
 # sum_plot
 ```
-### Save my plots
+
+
+## Save my plots
 
 ```{r}
 pdf(file.path(my_dir,"means_area_plot.pdf"),width=8,height=5,paper='special')
