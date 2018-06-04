@@ -1,0 +1,42 @@
+---
+title: "mixsiar_sed_import"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initialize
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+# Set directory
+lake <- "trk"
+dir <- file.path("extdata")
+full_data <- read_csv(file.path(dir, paste(lake, "_sed.csv", sep = "")))
+```
+
+```{r}
+# Subset
+rows <- nrow(full_data) 
+sub_num <- 40 # number of rows you want
+x <- ceiling(rows / sub_num) # number of rows to skip in order to get a total of <40
+
+sub_data <- data_frame()
+
+for (i in seq(1, rows, by = x)) {
+  sub_data <- bind_rows(sub_data, full_data[i,])
+}
+```
+
+```{r}
+# Save csv
+sub_data_length <- nrow(sub_data)
+write.csv(sub_data, file.path(dir, paste(lake, sub_data_length, "sed.csv", sep = "_")))
+```
+
