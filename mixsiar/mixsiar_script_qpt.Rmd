@@ -31,6 +31,9 @@ Script file to run wolves example without GUI
 ```{r}
 library(tidyverse)
 library(MixSIAR)
+library(gridExtra)
+library(grid)
+library(lattice)
 ```
 
 # Initialize
@@ -46,6 +49,7 @@ if(!dir.exists(my_dir)) {
   "Error: Directory already exists"
 }
 options(max.print = 1000) # Their default
+load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -289,6 +293,14 @@ output_options <- list(summary_save = TRUE,
                        plot_xy_save_png = FALSE)
 ```
 
+## Save jags.1
+
+```{r}
+save(jags.1, file = file.path(my_dir, "jags1.saved"))
+```
+
+## JAGS output
+
 ```{r}
 # Create diagnostics, summary statistics, and posterior plots
 options(max.print = 50000)
@@ -306,29 +318,34 @@ output_JAGS(jags.1, mix, source, output_options)
 ```{r}
 sum_stats_mod <- read.csv(file.path(my_dir, "summary_statistics_mod.csv")) %>% 
   mutate("Age" = parse_number(Age)) %>% 
+  rename("Median" = X50.) %>% 
   select(-starts_with("X"))
 sum_stats_mod
 ```
 
 ```{r}
 p <- sum_stats_mod %>%
-  gather(var, value, Mean) %>% 
   ggplot() +
-  aes(Age, value) +
-  scale_x_reverse() +
-  labs(y = "Fractional Contribution")
+  aes(Age, Mean) +
+  scale_x_reverse()
+  # + labs(y = "Fractional Contribution")
 
 means_area_plot <- p +
   aes(fill = Type) +
   geom_area()
-  #geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
+
+medians_area_plot <- p +
+  aes(x = Age, y = Median, fill = Type) +
+  geom_area()
 
 means_point_plot <- p +
   aes(color = Type) +
   geom_point() +
-  geom_errorbar(aes(ymin=value-SD, ymax=value+SD), width=200)
+  geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=200)
+
 
 means_area_plot
+medians_area_plot
 means_point_plot
 
 
@@ -347,13 +364,12 @@ means_point_plot
 #   geom_area()
 # sum_plot
 ```
-
-
 ## Save my plots
 
 ```{r}
-pdf(file.path(my_dir,"means_area_plot.pdf"),width=8,height=5,paper='special')
-
-pdf(file.path(my_dir,"means_point_plot.pdf"),width=8,height=5,paper='special')
+ggsave(file.path(my_dir,"means_area_plot.pdf"), plot = means_area_plot, width = 8, height = 5)
+ggsave(file.path(my_dir,"medians_area_plot.pdf"), plot = medians_area_plot, width = 8, height = 5)
+ggsave(file.path(my_dir,"means_point_plot.pdf"), plot = means_point_plot, width = 8, height = 5)
+ggsave(file.path(my_dir,"means_meds_plots_together.pdf"), plot = grid.arrange(means_area_plot, medians_area_plot, means_point_plot))
 ```
 
