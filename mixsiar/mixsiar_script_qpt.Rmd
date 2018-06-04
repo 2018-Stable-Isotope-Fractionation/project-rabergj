@@ -43,7 +43,7 @@ library(lattice)
 lake_name <- "SKR" # for plots
 lake <- "skr_small" # for use in code
 
-run_length <- "normal"
+run_length <- "test"
 
 my_dir <- paste(lake, run_length, "2", sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
@@ -59,7 +59,7 @@ options(max.print = 1000) # Their default
 ## Reload previous data
 
 ```{r}
-# load(file.path(my_dir, "jags1.saved"))
+load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -314,7 +314,6 @@ medians <- as_tibble(jags.1[["BUGSoutput"]][["median"]][["p.fac1"]]) %>%
   gather(Type, Median, "Algae", "Aquatic_plants", "Soil", "Terrestrial")
 
 sum_stats <- bind_cols(ages, means["Type"], means["Mean"], sd["SD"], medians["Median"])
-sum_stats
 ```
 
 ## Plots from jags.1
@@ -402,13 +401,18 @@ output_options <- list(summary_save = TRUE,
                        plot_xy_save_png = FALSE)
 ```
 
+```{r}
+# Check to see if plots will work
+dev.list() # This shows current devices. If above 60, R won't work.
+while (!is.null(dev.list()))  dev.off()
+```
+
 
 ```{r}
 # Create diagnostics, summary statistics, and posterior plots
+
 options(max.print = 99999)
 output_JAGS(jags.1, mix, source, output_options)
-dev.off() # This should clear some devices (plots) from memory (?)
-dev.list() # This shows current devices. If above 60, R won't work.
 ```
 
 
