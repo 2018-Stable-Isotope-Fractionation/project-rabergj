@@ -43,9 +43,9 @@ library(lattice)
 lake_name <- "SKR" # for plots
 lake <- "skr_small" # for use in code
 
-run_length <- "test"
+run_length <- "normal"
 
-my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
+my_dir <- paste(lake, run_length, "2", sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
@@ -256,15 +256,6 @@ JAGS output will be saved as 'jags.1'
  Can also set custom MCMC parameters
  run <- list(chainLength=200000, burn=150000, thin=50, chains=3, calcDIC=TRUE)
 
-## Test run
-```{r}
-# Good idea to use 'test' first to check if
-#   1) the data are loaded correctly, and 
-#   2) the model is specified correctly
-# jags.1 <- run_model(run="test", mix, source, discr, model_filename, 
-#                     alpha.prior = 1, resid_err, process_err)
-```
-
 ## Real run
 
 ```{r}
@@ -276,47 +267,11 @@ jags.1 <- run_model(run=run_length, mix, source, discr, model_filename,
 
 # Process JAGS output
 
-Choose output options (see ?output_options for details)
-
-** A new folder apparently needs to be created every time.
-
-```{r}
-output_options <- list(summary_save = TRUE,                 
-                       summary_name = file.path(my_dir, "summary_statistics"), 
-                       sup_post = FALSE,                    
-                       plot_post_save_pdf = TRUE,           
-                       plot_post_name = file.path(my_dir, "posterior_density"),
-                       sup_pairs = FALSE,             
-                       plot_pairs_save_pdf = TRUE,    
-                       plot_pairs_name = file.path(my_dir, "pairs_plot"),
-                       sup_xy = FALSE,           
-                       plot_xy_save_pdf = TRUE,
-                       plot_xy_name = file.path(my_dir, "xy_plot"),
-                       gelman = TRUE,
-                       heidel = FALSE,  
-                       geweke = TRUE,   
-                       diag_save = TRUE,
-                       diag_name = file.path(my_dir, "diagnostics"),
-                       indiv_effect = FALSE,       
-                       plot_post_save_png = FALSE, 
-                       plot_pairs_save_png = FALSE,
-                       plot_xy_save_png = FALSE)
-```
-
 ## Save jags.1
 
 ```{r}
 save(jags.1, file = file.path(my_dir, "jags1.saved"))
 ```
-
-## JAGS output
-
-```{r}
-# Create diagnostics, summary statistics, and posterior plots
-options(max.print = 99999)
-output_JAGS(jags.1, mix, source, output_options)
-```
-
 
 ## Parse jags.1
 
@@ -362,7 +317,7 @@ sum_stats <- bind_cols(ages, means["Type"], means["Mean"], sd["SD"], medians["Me
 sum_stats
 ```
 
-## My plots
+## Plots from jags.1
 
 ```{r}
 p <- sum_stats %>%
@@ -406,12 +361,55 @@ means_point_plot
 #   geom_area()
 # sum_plot
 ```
-## Save my plots
+
 
 ```{r}
+# Save plots
 ggsave(file.path(my_dir,"means_area_plot.pdf"), plot = means_area_plot, width = 8, height = 5)
 ggsave(file.path(my_dir,"medians_area_plot.pdf"), plot = medians_area_plot, width = 8, height = 5)
 ggsave(file.path(my_dir,"means_point_plot.pdf"), plot = means_point_plot, width = 8, height = 5)
 ggsave(file.path(my_dir,"means_meds_plots_together.pdf"), plot = grid.arrange(means_area_plot, medians_area_plot, means_point_plot))
 ```
+
+
+## JAGS output
+
+Choose output options (see ?output_options for details)
+
+** A new folder apparently needs to be created every time.
+
+```{r}
+# Nice to suppress all plots the first time to see 
+output_options <- list(summary_save = TRUE,                 
+                       summary_name = file.path(my_dir, "summary_statistics"), 
+                       sup_post = FALSE,                    
+                       plot_post_save_pdf = FALSE,           
+                       plot_post_name = file.path(my_dir, "posterior_density"),
+                       sup_pairs = FALSE,             
+                       plot_pairs_save_pdf = FALSE,    
+                       plot_pairs_name = file.path(my_dir, "pairs_plot"),
+                       sup_xy = FALSE,           
+                       plot_xy_save_pdf = FALSE,
+                       plot_xy_name = file.path(my_dir, "xy_plot"),
+                       gelman = TRUE,
+                       heidel = FALSE,  
+                       geweke = TRUE,   
+                       diag_save = TRUE,
+                       diag_name = file.path(my_dir, "diagnostics"),
+                       indiv_effect = FALSE,       
+                       plot_post_save_png = FALSE, 
+                       plot_pairs_save_png = FALSE,
+                       plot_xy_save_png = FALSE)
+```
+
+
+```{r}
+# Create diagnostics, summary statistics, and posterior plots
+options(max.print = 99999)
+output_JAGS(jags.1, mix, source, output_options)
+dev.off() # This should clear some devices (plots) from memory (?)
+dev.list() # This shows current devices. If above 60, R won't work.
+```
+
+
 
