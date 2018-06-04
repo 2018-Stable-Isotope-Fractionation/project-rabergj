@@ -43,9 +43,9 @@ library(lattice)
 lake_name <- "SKR" # for plots
 lake <- "skr_small" # for use in code
 
-run_length <- "test"
+run_length <- "long"
 
-my_dir <- paste(lake, run_length, "2", sep = "_") # add appendix here if needed
+my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
@@ -53,13 +53,12 @@ if(!dir.exists(my_dir)) {
 }
 
 
-
 options(max.print = 1000) # Their default
 ```
 ## Reload previous data
 
 ```{r}
-load(file.path(my_dir, "jags1.saved"))
+# load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -382,18 +381,18 @@ Choose output options (see ?output_options for details)
 output_options <- list(summary_save = TRUE,                 
                        summary_name = file.path(my_dir, "summary_statistics"), 
                        sup_post = FALSE,                    
-                       plot_post_save_pdf = FALSE,           
+                       plot_post_save_pdf = TRUE,           
                        plot_post_name = file.path(my_dir, "posterior_density"),
                        sup_pairs = FALSE,             
-                       plot_pairs_save_pdf = FALSE,    
+                       plot_pairs_save_pdf = TRUE,    
                        plot_pairs_name = file.path(my_dir, "pairs_plot"),
                        sup_xy = FALSE,           
-                       plot_xy_save_pdf = FALSE,
+                       plot_xy_save_pdf = TRUE,
                        plot_xy_name = file.path(my_dir, "xy_plot"),
-                       gelman = TRUE,
+                       gelman = FALSE,
                        heidel = FALSE,  
-                       geweke = TRUE,   
-                       diag_save = TRUE,
+                       geweke = FALSE,   
+                       diag_save = FALSE,
                        diag_name = file.path(my_dir, "diagnostics"),
                        indiv_effect = FALSE,       
                        plot_post_save_png = FALSE, 
