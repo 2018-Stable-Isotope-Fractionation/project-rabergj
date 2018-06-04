@@ -42,6 +42,9 @@ library(lattice)
 # Update the lake name and run length, create directory
 lake_name <- "SKR" # for plots
 lake <- "skr_small" # for use in code
+
+run_length <- "test"
+
 my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
@@ -49,7 +52,7 @@ if(!dir.exists(my_dir)) {
   "Error: Directory already exists"
 }
 
-run_length <- "test"
+
 
 options(max.print = 1000) # Their default
 ```
