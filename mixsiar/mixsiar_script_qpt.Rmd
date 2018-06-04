@@ -40,16 +40,23 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake <- "skr_small"
-run_length <- "test"
+lake_name <- "SKR" # for plots
+lake <- "skr_small" # for use in code
 my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
   "Error: Directory already exists"
 }
+
+run_length <- "test"
+
 options(max.print = 1000) # Their default
-load(file.path(my_dir, "jags1.saved"))
+```
+## Reload previous data
+
+```{r}
+# load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -303,32 +310,63 @@ save(jags.1, file = file.path(my_dir, "jags1.saved"))
 
 ```{r}
 # Create diagnostics, summary statistics, and posterior plots
-options(max.print = 50000)
+options(max.print = 99999)
 output_JAGS(jags.1, mix, source, output_options)
 ```
 
 
-```{r}
-#read_delim(file = file.path("output", "summary_statistics.txt"), skip = 7, delim = "")
-```
+## Parse jags.1
 
+For documentation, see p. 22 of https://github.com/brianstock/MixSIAR/blob/master/Manual/mixsiar_manual_3.1.pdf
+
+
+```{r}
+# Pull ages. This is really stupid, but used bind_rows to stack the ages, once for each source type
+ages <- read_csv(mix.filename)["Age"]
+ages <- bind_rows(ages, ages, ages, ages)
+
+# Pull means
+means <- as_tibble(jags.1[["BUGSoutput"]][["mean"]][["p.fac1"]]) %>% 
+  rename(
+    "Algae" = V1,
+    "Aquatic_plants" = V2,
+    "Soil" = V3,
+    "Terrestrial" = V4
+  ) %>%
+  gather(Type, Mean, "Algae", "Aquatic_plants", "Soil", "Terrestrial")
+
+# Pull standard deviations
+sd <- as_tibble(jags.1[["BUGSoutput"]][["sd"]][["p.fac1"]]) %>% 
+  rename(
+    "Algae" = V1,
+    "Aquatic_plants" = V2,
+    "Soil" = V3,
+    "Terrestrial" = V4
+  ) %>% 
+  gather(Type, SD, "Algae", "Aquatic_plants", "Soil", "Terrestrial")
+
+# Pull medians
+medians <- as_tibble(jags.1[["BUGSoutput"]][["median"]][["p.fac1"]]) %>% 
+  rename(
+    "Algae" = V1,
+    "Aquatic_plants" = V2,
+    "Soil" = V3,
+    "Terrestrial" = V4
+  ) %>% 
+  gather(Type, Median, "Algae", "Aquatic_plants", "Soil", "Terrestrial")
+
+sum_stats <- bind_cols(ages, means["Type"], means["Mean"], sd["SD"], medians["Median"])
+sum_stats
+```
 
 ## My plots
 
 ```{r}
-sum_stats_mod <- read.csv(file.path(my_dir, "summary_statistics_mod.csv")) %>% 
-  mutate("Age" = parse_number(Age)) %>% 
-  rename("Median" = X50.) %>% 
-  select(-starts_with("X"))
-sum_stats_mod
-```
-
-```{r}
-p <- sum_stats_mod %>%
+p <- sum_stats %>%
   ggplot() +
   aes(Age, Mean) +
-  scale_x_reverse()
-  # + labs(y = "Fractional Contribution")
+  scale_x_reverse() +
+  labs(title = paste("Lake", lake_name), subtitle = paste("Run length =", run_length))
 
 means_area_plot <- p +
   aes(fill = Type) +
@@ -341,7 +379,8 @@ medians_area_plot <- p +
 means_point_plot <- p +
   aes(color = Type) +
   geom_point() +
-  geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=200)
+  geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=200) +
+  labs(y = "Mean +/- SD")
 
 
 means_area_plot
