@@ -263,6 +263,35 @@ dataplot
 ```
 
 
+### Data with source elipses
+
+```{r}
+library(pracma)
+theta <- seq(-pi/2, pi/2, by=0.1)
+phi <- seq(0, 2*pi, by=0.1)
+mgrd <- meshgrid(phi, theta)
+phi <- mgrd$X
+theta <-  mgrd$Y
+scale <- 1
+x <- cos(theta) * cos(phi) * 3
+dim(x) <- NULL
+y <- cos(theta) * sin(phi) * 2
+dim(y) <- NULL
+z <- sin(theta) * scale
+dim(z) <- NULL
+
+ell <- cbind(x, y, z)
+
+ell <- setNames(ell, c('x', 'y', 'z'))
+
+library(plotly)
+p <- plot_ly(as.data.frame(ell), x=x, y=y, z=z, type='mesh3d', alphahull = 0)
+
+p %>% layout(scene = list(aspectmode = 'data'))
+```
+
+
+
 
 ### Data and Simulation Space Combined
 
