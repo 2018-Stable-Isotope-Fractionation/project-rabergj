@@ -40,8 +40,8 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "SKR" # for plots
-lake <- "skr_small" # for use in code
+lake_name <- "TRK" # for plots
+lake <- "trk_37" # for use in code
 
 run_length <- "long"
 
@@ -381,18 +381,18 @@ Choose output options (see ?output_options for details)
 output_options <- list(summary_save = TRUE,                 
                        summary_name = file.path(my_dir, "summary_statistics"), 
                        sup_post = FALSE,                    
-                       plot_post_save_pdf = TRUE,           
+                       plot_post_save_pdf = FALSE,           
                        plot_post_name = file.path(my_dir, "posterior_density"),
                        sup_pairs = FALSE,             
-                       plot_pairs_save_pdf = TRUE,    
+                       plot_pairs_save_pdf = FALSE,    
                        plot_pairs_name = file.path(my_dir, "pairs_plot"),
                        sup_xy = FALSE,           
-                       plot_xy_save_pdf = TRUE,
+                       plot_xy_save_pdf = FALSE,
                        plot_xy_name = file.path(my_dir, "xy_plot"),
-                       gelman = FALSE,
+                       gelman = TRUE,
                        heidel = FALSE,  
-                       geweke = FALSE,   
-                       diag_save = FALSE,
+                       geweke = TRUE,   
+                       diag_save = TRUE,
                        diag_name = file.path(my_dir, "diagnostics"),
                        indiv_effect = FALSE,       
                        plot_post_save_png = FALSE, 
