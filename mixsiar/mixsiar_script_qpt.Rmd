@@ -31,6 +31,7 @@ Script file to run wolves example without GUI
 ```{r}
 library(tidyverse)
 library(MixSIAR)
+library(latex2exp)
 library(gridExtra)
 library(grid)
 library(lattice)
@@ -148,10 +149,38 @@ Are one or more of your sources confounded/hidden?
  'plot_save_png' - TRUE or FALSE, should MixSIAR save the plot as a .png?
  
 ```{r}
-plot_data(filename=file.path(my_dir, "isospace_plot"), 
-          plot_save_pdf=TRUE,
-          plot_save_png=FALSE,
-          mix,source,discr) 
+# plot_data(filename=file.path(my_dir, "isospace_plot"), 
+#           plot_save_pdf=TRUE,
+#           plot_save_png=FALSE,
+#           mix,source,discr) 
+```
+
+## My isospace plot
+
+
+```{r, warning=FALSE}
+lake_data <- read_csv(mix.filename)
+source_data <- read_csv(source.filename)
+
+isospace <- 
+  ggplot() + 
+  geom_point(data = lake_data, aes(x = d13C, y = d15N, color = Age)) + 
+  #geom_path(data = lake_data, aes(x = d13C, y = d15N, color = Age), size = 0.2) +
+  scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
+  geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
+  geom_errorbar(data = source_data, aes(
+    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
+  geom_errorbarh(data = source_data, aes(
+    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+  geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
+  labs(
+    title = paste("Lake", lake_name, "Isospace"), 
+    color = "Age (yrs)", 
+    x = latex2exp::TeX("$\\delta^{13}C$"), 
+    y = latex2exp::TeX("$\\delta^{15}N$"))
+isospace
+ggsave(file.path(my_dir,"isospace.pdf"), plot = isospace, width = 8, height = 5)
+
 ```
 
 If 2 isotopes/tracers, calculate normalized surface area of the convex hull polygon(s)
