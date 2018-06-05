@@ -79,22 +79,6 @@ i.e. your:
 
 To run on your data, replace the system.file call with the path to your file
 
-## Wolves data
-
-```{r}
-# # To run on your data, replace the system.file call with the path to your file
-# mix.filename <- file.path("extdata/wolves_consumer.csv")
-# 
-# # Load mixture data
-# mix <- load_mix_data(filename=mix.filename, 
-#                      iso_names=c("d13C","d15N"), 
-#                      factors=c("Region"), 
-#                      fac_random=c(TRUE), 
-#                      fac_nested=c(FALSE), 
-#                      cont_effects=NULL)
-```
-
-
 ## Lake data
 
 ```{r}
@@ -121,18 +105,6 @@ i.e. your:
  'conc_dep': TRUE or FALSE, do you have concentration dependence data in the file?
  'data_type': "means" or "raw", is your source data as means+SD, or do you have raw data
 
-
-## Wolves sources
-
-```{r}
-# # To run on your data, replace the system.file call with the path to your file
-# source.filename <- system.file("extdata", "wolves_sources.csv", package = "MixSIAR")
-# 
-# # Load source data
-# source <- load_source_data(filename=source.filename, source_factors="Region", 
-#                             conc_dep=FALSE, data_type="means", mix)
-```
-
 ## Lake sources
 
 ```{r}
@@ -152,18 +124,6 @@ i.e. your:
    -xxxxxxxx (sediment/hydrology fingerprinting)
 
 'filename' - name of the CSV file with discrimination data
-
-## Wolves discriminations
-
-```{r}
-# # To run on your data, replace the system.file call with the path to your file
-# discr.filename <- file.path("extdata", "wolves_discrimination.csv")
-# # file.exists("extdata/wolves_discrimination.csv")
-# 
-# # Load discrimination data
-# discr <- load_discr_data(filename=discr.filename, mix)
-```
-
 
 ## Lakes discriminations (= 0)
 
