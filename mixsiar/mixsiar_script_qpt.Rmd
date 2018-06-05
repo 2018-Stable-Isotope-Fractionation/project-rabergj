@@ -40,8 +40,8 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "TRK" # for plots
-lake <- "trk_37" # for use in code
+lake_name <- "HVT" # for plots
+lake <- "hvt_37" # for use in code
 
 run_length <- "long"
 
@@ -378,21 +378,25 @@ Choose output options (see ?output_options for details)
 
 ```{r}
 # Nice to suppress all plots the first time to see 
-output_options <- list(summary_save = TRUE,                 
+diagnostics <- FALSE
+plots <- TRUE
+
+# "sup" options must be false for plots to print, for some reason
+output_options <- list(summary_save = diagnostics,                 
                        summary_name = file.path(my_dir, "summary_statistics"), 
                        sup_post = FALSE,                    
-                       plot_post_save_pdf = FALSE,           
+                       plot_post_save_pdf = plots,           
                        plot_post_name = file.path(my_dir, "posterior_density"),
                        sup_pairs = FALSE,             
-                       plot_pairs_save_pdf = FALSE,    
+                       plot_pairs_save_pdf = plots,    
                        plot_pairs_name = file.path(my_dir, "pairs_plot"),
                        sup_xy = FALSE,           
-                       plot_xy_save_pdf = FALSE,
+                       plot_xy_save_pdf = plots,
                        plot_xy_name = file.path(my_dir, "xy_plot"),
-                       gelman = TRUE,
+                       gelman = diagnostics,
                        heidel = FALSE,  
-                       geweke = TRUE,   
-                       diag_save = TRUE,
+                       geweke = diagnostics,   
+                       diag_save = diagnostics,
                        diag_name = file.path(my_dir, "diagnostics"),
                        indiv_effect = FALSE,       
                        plot_post_save_png = FALSE, 
