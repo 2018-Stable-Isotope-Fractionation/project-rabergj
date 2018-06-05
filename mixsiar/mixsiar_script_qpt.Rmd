@@ -40,8 +40,8 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "HVT" # for plots
-lake <- "hvt_37" # for use in code
+lake_name <- "HAK" # for plots
+lake <- "hak_37" # for use in code
 
 run_length <- "long"
 
@@ -58,7 +58,7 @@ options(max.print = 1000) # Their default
 ## Reload previous data
 
 ```{r}
-# load(file.path(my_dir, "jags1.saved"))
+load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -381,16 +381,17 @@ Choose output options (see ?output_options for details)
 diagnostics <- FALSE
 plots <- TRUE
 
+
 # "sup" options must be false for plots to print, for some reason
 output_options <- list(summary_save = diagnostics,                 
                        summary_name = file.path(my_dir, "summary_statistics"), 
-                       sup_post = FALSE,                    
+                       sup_post = !plots,                    
                        plot_post_save_pdf = plots,           
                        plot_post_name = file.path(my_dir, "posterior_density"),
-                       sup_pairs = FALSE,             
+                       sup_pairs = !plots,             
                        plot_pairs_save_pdf = plots,    
                        plot_pairs_name = file.path(my_dir, "pairs_plot"),
-                       sup_xy = FALSE,           
+                       sup_xy = !plots,           
                        plot_xy_save_pdf = plots,
                        plot_xy_name = file.path(my_dir, "xy_plot"),
                        gelman = diagnostics,
