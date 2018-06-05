@@ -45,7 +45,7 @@ lake <- "hak_37" # for use in code
 
 run_length <- "long"
 
-my_dir <- paste(lake, run_length, sep = "_") # add appendix here if needed
+my_dir <- file.path("suess_corrected", paste(lake, run_length, sep = "_")) # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
@@ -58,7 +58,7 @@ options(max.print = 1000) # Their default
 ## Reload previous data
 
 ```{r}
-load(file.path(my_dir, "jags1.saved"))
+# load(file.path(my_dir, "jags1.saved"))
 ```
 
 
@@ -109,7 +109,7 @@ i.e. your:
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-source.filename <- file.path("extdata", "iceland_sources_a_split.csv")
+source.filename <- file.path("extdata", "iceland_sources_a_split_suess.csv")
 # file.exists("extdata/qpt_sources.csv")
 
 # Load source data
@@ -334,12 +334,12 @@ ggsave(file.path(my_dir,"means_meds_plots_together.pdf"), plot = grid.arrange(me
 
 Choose output options (see ?output_options for details)
 
-** A new folder apparently needs to be created every time.
+### Diagnostics
 
 ```{r}
 # Nice to suppress all plots the first time to see 
-diagnostics <- FALSE
-plots <- TRUE
+diagnostics <- TRUE
+plots <- FALSE
 
 
 # "sup" options must be false for plots to print, for some reason
@@ -374,10 +374,44 @@ while (!is.null(dev.list()))  dev.off()
 
 ```{r}
 # Create diagnostics, summary statistics, and posterior plots
-
 options(max.print = 99999)
 output_JAGS(jags.1, mix, source, output_options)
 ```
 
+### Density plots
+
+```{r}
+# Nice to suppress all plots the first time to see 
+diagnostics <- FALSE
+plots <- TRUE
 
 
+# "sup" options must be false for plots to print, for some reason
+output_options <- list(summary_save = diagnostics,                 
+                       summary_name = file.path(my_dir, "summary_statistics"), 
+                       sup_post = !plots,                    
+                       plot_post_save_pdf = plots,           
+                       plot_post_name = file.path(my_dir, "posterior_density"),
+                       sup_pairs = !plots,             
+                       plot_pairs_save_pdf = plots,    
+                       plot_pairs_name = file.path(my_dir, "pairs_plot"),
+                       sup_xy = !plots,           
+                       plot_xy_save_pdf = plots,
+                       plot_xy_name = file.path(my_dir, "xy_plot"),
+                       gelman = diagnostics,
+                       heidel = FALSE,  
+                       geweke = diagnostics,   
+                       diag_save = diagnostics,
+                       diag_name = file.path(my_dir, "diagnostics"),
+                       indiv_effect = FALSE,       
+                       plot_post_save_png = FALSE, 
+                       plot_pairs_save_png = FALSE,
+                       plot_xy_save_png = FALSE)
+```
+
+
+```{r}
+# Create diagnostics, summary statistics, and posterior plots
+options(max.print = 99999)
+output_JAGS(jags.1, mix, source, output_options)
+```
