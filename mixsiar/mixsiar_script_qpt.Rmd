@@ -41,8 +41,8 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "HAK" # for plots
-lake <- "hak_37" # for use in code
+lake_name <- "QPT" # for plots
+lake <- "qpt" # for use in code
 
 run_length <- "long"
 
@@ -110,7 +110,7 @@ i.e. your:
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-source.filename <- file.path("extdata", "iceland_sources_a_split_suess.csv")
+source.filename <- file.path("extdata", "qpt_sources_suess.csv")
 # file.exists("extdata/qpt_sources.csv")
 
 # Load source data
@@ -130,7 +130,7 @@ i.e. your:
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-discr.filename <- file.path("extdata", "discrimination.csv")
+discr.filename <- file.path("extdata", "qpt_discrimination.csv")
 # file.exists("extdata/wolves_discrimination.csv")
 
 # Load discrimination data
@@ -169,9 +169,9 @@ isospace <-
   scale_color_gradient2(low = "dark blue", mid = "dark green", high = "gold", midpoint = 3500) +
   geom_point(data = source_data, aes(x = Meand13C, y = Meand15N), color = "black") + 
   geom_errorbar(data = source_data, aes(
-    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N)) +
+    x = Meand13C, y = Meand15N, ymin = Meand15N - SDd15N, ymax = Meand15N + SDd15N), width = 0.8) +
   geom_errorbarh(data = source_data, aes(
-    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C)) +
+    x = Meand13C, y = Meand15N, xmin = Meand13C - SDd13C, xmax = Meand13C + SDd13C), width = 0.1) +
   geom_text(data = source_data, aes(x = Meand13C, y = Meand15N, label = Source, hjust = -0.5, vjust = 2)) +
   labs(
     title = paste("Lake", lake_name, "Isospace"), 
