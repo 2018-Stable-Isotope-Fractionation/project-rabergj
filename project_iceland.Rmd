@@ -18,9 +18,10 @@ editor_options:
 library(tidyverse)
 library(plotly)
 library(stats)
-library(ggtern)
+# library(ggtern)
 library(latex2exp)
 library(knitr)
+library(pracma)
 ```
 
 # Background/Refresher
@@ -90,6 +91,9 @@ aqua <- source_data %>%
 
 soil <- source_data %>% 
   filter(Source == "Soil")
+
+terrestrial <- source_data %>% 
+  filter(Source == "Terrestrial")
 ```
 
 ### Define parameters
@@ -266,28 +270,70 @@ dataplot
 ### Data with source elipses
 
 ```{r}
-library(pracma)
+
+ell_source_data$source_name <- 0
+
+for (i in seq(1:nrow(source_data))) {
+  source_name <- source_data[i,]$Source
+  xo <- source_data[i,]$MeanCN
+  xsd <- source_data[i,]$SDCN
+  yo <- source_data[i,]$Meand13C
+  ysd <- source_data[i,]$SDd13C
+  zo <- source_data[i,]$Meand15N
+  zsd <- source_data[i,]$SDd15N
+  ell_source_data$terr <- data.frame(xo, xsd, yo, ysd, zo, zsd)
+}
+xo <- source_data[1,]$MeanCN
+xsd <- source_data[1,]$SDCN
+yo <- source_data[1,]$Meand13C
+ysd <- source_data[1,]$SDd13C
+zo <- source_data[1,]$Meand15N
+zsd <- source_data[1,]$SDd15N
+ell_source_data$terr <- data.frame(xo, xsd, yo, ysd, zo, zsd)
+# xo <- 62.64
+# xsd <- 43
+# yo <- -26
+# ysd <- 3
+# zo <- -2
+# zsd <- 2
+
 theta <- seq(-pi/2, pi/2, by=0.1)
 phi <- seq(0, 2*pi, by=0.1)
 mgrd <- meshgrid(phi, theta)
 phi <- mgrd$X
 theta <-  mgrd$Y
-scale <- 1
-x <- cos(theta) * cos(phi) * 3
+x <- cos(theta) * cos(phi) * xsd + xo
 dim(x) <- NULL
-y <- cos(theta) * sin(phi) * 2
+y <- cos(theta) * sin(phi) * ysd + yo
 dim(y) <- NULL
-z <- sin(theta) * scale
+z <- sin(theta) * zsd + zo
 dim(z) <- NULL
 
 ell <- cbind(x, y, z)
 
 ell <- setNames(ell, c('x', 'y', 'z'))
 
-library(plotly)
-p <- plot_ly(as.data.frame(ell), x=x, y=y, z=z, type='mesh3d', alphahull = 0)
+source_elipses <- as.data.frame(ell)
+
+p <- plot_ly(as.data.frame(ell), x=x, y=y, z=z, type='mesh3d', opacity = 0.5, alphahull = 0.1)
 
 p %>% layout(scene = list(aspectmode = 'data'))
+
+
+
+dataplot <- 
+  plot_ly() %>% 
+  add_markers(lake_data, x = lake_data$C.N, y = lake_data$d13C, z = lake_data$d15N, color = lake_data$Age) %>% 
+  add_markers(source_data, x = source_data$MeanCN, y = source_data$Meand13C, z = source_data$Meand15N, color = source_data$Source, error_y = ~list(value = 1,
+                        color = 'black')) %>% 
+  layout(scene = list(xaxis = list(title = "C:N"),
+                      yaxis = list(title = "delta13C"),
+                      zaxis = list(title = "delta15N")
+                      ),
+         title = paste("Lake", lake_name)) %>% 
+  colorbar(title = "Age")
+
+dataplot
 ```
 
 
