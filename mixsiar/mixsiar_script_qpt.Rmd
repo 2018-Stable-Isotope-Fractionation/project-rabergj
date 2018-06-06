@@ -41,12 +41,13 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "QPT" # for plots
-lake <- "qpt" # for use in code
+lake_name <- "HVT" # for plots
+lake <- "hvt_37" # for use in code
 
-run_length <- "long"
+run_length <- "very long"
+run_length_name <- "very_long"
 
-my_dir <- file.path("suess_corrected", paste(lake, run_length, sep = "_")) # add appendix here if needed
+my_dir <- file.path("suess_corrected", paste(lake, run_length_name, sep = "_")) # add appendix here if needed
 if(!dir.exists(my_dir)) {
   dir.create(my_dir)
 } else {
@@ -110,7 +111,7 @@ i.e. your:
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-source.filename <- file.path("extdata", "qpt_sources_suess.csv")
+source.filename <- file.path("extdata", "iceland_sources_a_split_suess.csv")
 # file.exists("extdata/qpt_sources.csv")
 
 # Load source data
@@ -130,7 +131,7 @@ i.e. your:
 
 ```{r}
 # To run on your data, replace the system.file call with the path to your file
-discr.filename <- file.path("extdata", "qpt_discrimination.csv")
+discr.filename <- file.path("extdata", "discrimination.csv")
 # file.exists("extdata/wolves_discrimination.csv")
 
 # Load discrimination data
