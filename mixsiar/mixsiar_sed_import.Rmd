@@ -16,7 +16,7 @@ library(tidyverse)
 
 ```{r}
 # Set directory
-lake <- "hak"
+lake <- "arn"
 dir <- file.path("extdata")
 full_data <- read_csv(file.path(dir, paste(lake, "_sed.csv", sep = "")))
 ```

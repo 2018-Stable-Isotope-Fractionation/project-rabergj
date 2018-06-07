@@ -41,8 +41,8 @@ library(lattice)
 
 ```{r}
 # Update the lake name and run length, create directory
-lake_name <- "TRK" # for plots
-lake <- "trk_37" # for use in code
+lake_name <- "ARN" # for plots
+lake <- "arn_37" # for use in code
 
 run_length <- "very long"
 run_length_name <- "very_long"
