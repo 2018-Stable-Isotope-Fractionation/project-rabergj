@@ -20,7 +20,7 @@ Load Libraries
 library(tidyverse)
 library(plotly)
 library(stats)
-library(ggtern)
+#library(ggtern)
 library(latex2exp)
 library(knitr)
 ```
@@ -272,6 +272,7 @@ qpt_data_plot <-
   labs(title = "Lake QPT")
 
 qpt_data_plot
+qpt_data_plot %>% ggsave(filename = "plots/qpt_EA_results.pdf", width = 8, height = 6)
 ```
 
 #### Question 4
